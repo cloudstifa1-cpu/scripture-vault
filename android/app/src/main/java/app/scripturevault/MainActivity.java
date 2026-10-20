@@ -22,14 +22,15 @@ public class MainActivity extends Activity {
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
     s.setTextZoom(100);
+    // Everything is bundled in the app, so never use a stale saved copy of the pages.
+    s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+    web.clearCache(true);
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) { return loader.shouldInterceptRequest(r.getUrl()); }
     });
     setContentView(web);
-    if (saved != null) web.restoreState(saved); else web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
+    web.loadUrl("https://appassets.androidplatform.net/assets/index.html");
   }
-
-  @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }
 
   @Override public void onBackPressed() {
     web.evaluateJavascript("window.fvBack ? window.fvBack() : false", v -> {
