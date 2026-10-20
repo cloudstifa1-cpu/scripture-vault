@@ -144,6 +144,9 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
 .sbtn { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 14px; font-weight: 700; text-align: left; }
 .sbtn.primary { background: var(--accent); color: var(--accent-ink); border: 0; }
 .sbtn.danger { color: var(--person); }
+.themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.themes button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 12px 4px; font-weight: 700; }
+.themes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
 .grid.n { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
 .grid button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 4px; font-size: 15px; font-weight: 700; }
@@ -633,14 +636,24 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     $('cTxt').focus(); $('cTxt').select(); $('cClose').onclick = closeSheet;
   }
   function applySize() { document.documentElement.style.setProperty('--rs', (S.size || 19) + 'px'); }
+  // Light / Dark / Phone setting
+  function applyTheme() {
+    var t = S.theme || 'auto', root = document.documentElement;
+    if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+  }
   function openMenu() {
     var hasEx = S.notes.concat(S.vault).some(function (d) { return d.ex; });
     sheet('<h2>Scripture Vault</h2><p>Your notes are saved on this phone. Copy a backup now and then and keep it somewhere safe.</p>' +
-      '<div class="chapnav"><button id="mSm">A− Smaller text</button><button id="mLg">A+ Larger text</button></div>' +
+      '<span class="lbl">Background</span><div class="themes">' + [['light', '☀ Light'], ['dark', '☾ Dark'], ['auto', 'Phone setting']].map(function (o) {
+        return '<button data-theme-set="' + o[0] + '" class="' + ((S.theme || 'auto') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      '<span class="lbl">Text size</span><div class="chapnav"><button id="mSm">A− Smaller</button><button id="mLg">A+ Larger</button></div>' +
       '<button class="sbtn primary" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
       (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
       '<p style="font-size:14px">Bible text: KJV, WEB, BSB, ASV, YLT, Darby, Geneva 1599, Douay-Rheims and BBE, all public domain.</p><button class="sbtn" id="mClose">Close</button>');
     $('mClose').onclick = closeSheet;
+    [].forEach.call(document.querySelectorAll('[data-theme-set]'), function (b) {
+      b.onclick = function () { S.theme = b.getAttribute('data-theme-set'); applyTheme(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} [].forEach.call(document.querySelectorAll('[data-theme-set]'), function (x) { x.classList.toggle('on', x === b); }); };
+    });
     $('mSm').onclick = function () { S.size = Math.max(14, (S.size || 19) - 1); applySize(); save(); };
     $('mLg').onclick = function () { S.size = Math.min(30, (S.size || 19) + 1); applySize(); save(); };
     $('mCopy').onclick = function () { copy(JSON.stringify({ app: 'scripture-vault', notes: S.notes, vault: S.vault }), 'Backup copied. Paste it into an email to yourself.'); };
@@ -686,7 +699,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     })();
   }
 
-  S = load(); S.pos = S.pos || { b: 43, c: 3, v: 16 }; S.ver = S.ver || 'kjv'; applySize();
+  S = load(); S.pos = S.pos || { b: 43, c: 3, v: 16 }; S.ver = S.ver || 'kjv'; applySize(); applyTheme();
   buildRefs(); buildMap(); renderRead(S.pos.v);
   if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname !== 'appassets.androidplatform.net') {
     navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { swOn = true; setTimeout(prefetch, 2500); }).catch(function () {});
