@@ -48,7 +48,7 @@ header .iconbtn { border: 0; background: rgba(255,255,255,.1); color: var(--chro
 #placeBtn { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; color: var(--chrome-ink); font-family: var(--serif); font-size: 22px; font-weight: 700; padding: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #placeBtn span { color: var(--accent); font-size: 16px; }
 .ver { display: flex; background: rgba(255,255,255,.1); border-radius: 10px; padding: 3px; }
-.ver button { border: 0; background: transparent; color: var(--chrome-ink); border-radius: 8px; padding: 8px 10px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; font-size: 15px; }
+.ver button { white-space: nowrap; border: 0; background: transparent; color: var(--chrome-ink); border-radius: 8px; padding: 8px 10px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; font-size: 15px; }
 .ver button.on { background: var(--accent); color: var(--accent-ink); }
 #docTitle { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--chrome-ink); font-weight: 700; font-size: 20px; padding: 6px 4px; border-bottom: 2px solid transparent; }
 #docTitle:focus { outline: none; border-bottom-color: var(--accent); }
@@ -188,7 +188,10 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     46:'1 Cor|1 Co',47:'2 Cor|2 Co',48:'Gal',49:'Eph',50:'Phil|Php',51:'Col',52:'1 Thess|1 Th',53:'2 Thess|2 Th',54:'1 Tim|1 Ti',
     55:'2 Tim|2 Ti',56:'Tit',57:'Philem|Phm',58:'Heb',59:'Jas|Jm',60:'1 Pet|1 Pe|1 Pt',61:'2 Pet|2 Pe|2 Pt',62:'1 Jn|1 Jo',63:'2 Jn|2 Jo',64:'3 Jn|3 Jo',
     65:'Jud|Jd',66:'Rev|Rv|Revelations'};
-  var VERS = { kjv: 'King James Version', web: 'World English Bible' };
+  var VERS = { kjv: 'King James Version', web: 'World English Bible', bsb: 'Berean Standard Bible', asv: 'American Standard Version', ylt: "Young's Literal Translation",
+    dby: 'Darby Bible', gnv: 'Geneva Bible (1599)', drc: 'Douay-Rheims', bbe: 'Bible in Basic English' };
+  var VNOTE = { kjv: '1769 · the classic', web: 'Modern English', bsb: 'Modern, word-accurate', asv: '1901 · close to the KJV', ylt: '1898 · strictly word-for-word',
+    dby: '1889 · literal', gnv: '1599 · original old spelling', drc: 'Catholic · Challoner revision', bbe: 'Simple, plain English' };
   var TYPES = { person: 'Person', place: 'Place', theme: 'Theme', idea: 'Idea' };
   var $ = function (id) { return document.getElementById(id); };
   var S, view = 'read', stack = [], cur = null, tab = 'read', typeFilter = '', query = '', sMode = 'bible', sQuery = '';
@@ -306,8 +309,15 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
 
   // ── Reader ──
   function header(html) { $('hdr').innerHTML = html; }
-  function verHtml() { return '<div class="ver">' + Object.keys(VERS).map(function (k) { return '<button data-ver="' + k + '" class="' + (S.ver === k ? 'on' : '') + '">' + k.toUpperCase() + '</button>'; }).join('') + '</div>'; }
-  function wireVer(after) { [].forEach.call(document.querySelectorAll('[data-ver]'), function (b) { b.onclick = function () { S.ver = b.getAttribute('data-ver'); save(); after(); }; }); }
+  function verHtml() { return '<div class="ver"><button id="verBtn" class="on" aria-label="Bible version">' + S.ver.toUpperCase() + ' ▾</button></div>'; }
+  function wireVer(after) {
+    $('verBtn').onclick = function () {
+      sheet('<h2>Bible version</h2>' + Object.keys(VERS).map(function (k) {
+        return '<button class="sbtn' + (S.ver === k ? ' primary' : '') + '" data-ver="' + k + '">' + k.toUpperCase() + ' · ' + esc(VERS[k]) + '<br><span class="meta">' + VNOTE[k] + '</span></button>';
+      }).join(''));
+      [].forEach.call(document.querySelectorAll('[data-ver]'), function (b) { b.onclick = function () { S.ver = b.getAttribute('data-ver'); save(); closeSheet(); after(); prefetch(); }; });
+    };
+  }
   function linkText(t) {
     var r = findLinks(t), h = '', i = 0;
     r.forEach(function (x) { var v = vault(x.id); h += esc(t.slice(i, x.s)) + '<span class="lk t-' + v.type + '" data-id="' + x.id + '">' + esc(t.slice(x.s, x.e)) + '</span>'; i = x.e; });
@@ -629,7 +639,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       '<div class="chapnav"><button id="mSm">A− Smaller text</button><button id="mLg">A+ Larger text</button></div>' +
       '<button class="sbtn primary" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
       (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
-      '<p style="font-size:14px">Bible text: King James Version (1769) and World English Bible, both public domain.</p><button class="sbtn" id="mClose">Close</button>');
+      '<p style="font-size:14px">Bible text: KJV, WEB, BSB, ASV, YLT, Darby, Geneva 1599, Douay-Rheims and BBE, all public domain.</p><button class="sbtn" id="mClose">Close</button>');
     $('mClose').onclick = closeSheet;
     $('mSm').onclick = function () { S.size = Math.max(14, (S.size || 19) - 1); applySize(); save(); };
     $('mLg').onclick = function () { S.size = Math.min(30, (S.size || 19) + 1); applySize(); save(); };
@@ -663,21 +673,23 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   window.fvBack = function () { if (!$('sheet').hidden) { closeSheet(); return true; } return back(); };
   window.addEventListener('resize', function () { if (view === 'doc') paint(); });
 
-  // Save both Bibles on the phone for offline reading (quietly, once)
+  var swOn = false;
+  // Save the version being read on the phone for offline reading (quietly, once per version)
   function prefetch() {
-    try { if (localStorage.getItem('sv.saved') === '2') return; } catch (e) {}
-    var vs = ['kjv', 'web'], k = 0;
+    if (!swOn) return;
+    var vs = [S.ver].filter(function (v) { try { return localStorage.getItem('sv.saved.' + v) !== '1'; } catch (e) { return true; } }), k = 0;
+    if (prefetch.busy) return; prefetch.busy = true;
     (function nextVer() {
-      if (k >= vs.length) { try { localStorage.setItem('sv.saved', '2'); } catch (e) {} return; }
+      if (k >= vs.length) { prefetch.busy = false; return; }
       var ver = vs[k++], b = 0;
-      (function nextBook() { if (++b > 66) return nextVer(); fetch('data/' + ver + '/' + b + '.json').then(function () { setTimeout(nextBook, 60); }, function () {}); })();
+      (function nextBook() { if (++b > 66) { try { localStorage.setItem('sv.saved.' + ver, '1'); } catch (e) {} return nextVer(); } fetch('data/' + ver + '/' + b + '.json').then(function () { setTimeout(nextBook, 60); }, function () {}); })();
     })();
   }
 
   S = load(); S.pos = S.pos || { b: 43, c: 3, v: 16 }; S.ver = S.ver || 'kjv'; applySize();
   buildRefs(); buildMap(); renderRead(S.pos.v);
   if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname !== 'appassets.androidplatform.net') {
-    navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { setTimeout(prefetch, 2500); }).catch(function () {});
+    navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { swOn = true; setTimeout(prefetch, 2500); }).catch(function () {});
   }
 })();
 </script>
