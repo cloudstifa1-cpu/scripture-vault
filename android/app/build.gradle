@@ -1,2 +1,26 @@
-
+plugins { id 'com.android.application' }
+android {
+  namespace 'app.scripturevault'
+  compileSdk 34
+  defaultConfig {
+    applicationId 'app.scripturevault'
+    minSdk 21
+    targetSdk 34
+    versionCode Integer.parseInt(System.getenv('GITHUB_RUN_NUMBER') ?: '1')
+    versionName "1.0.${System.getenv('GITHUB_RUN_NUMBER') ?: '0'}"
+  }
+  signingConfigs {
+    // Same key every build, so new versions install over the old one and keep your notes.
+    sv {
+      storeFile file('../scripturevault.keystore')
+      storePassword 'scripturevault'
+      keyAlias 'scripturevault'
+      keyPassword 'scripturevault'
+    }
+  }
+  buildTypes {
+    release { minifyEnabled false; signingConfig signingConfigs.sv }
+  }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
 dependencies { implementation 'androidx.webkit:webkit:1.11.0' }
