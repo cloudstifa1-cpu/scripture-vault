@@ -1,0 +1,15 @@
+{
+  "name": "Scripture Vault",
+  "short_name": "Scripture Vault",
+  "description": "Read the Bible and keep linked study notes.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d2238",
+  "theme_color": "#1d2238",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

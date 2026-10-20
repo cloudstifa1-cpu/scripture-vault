@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#1d2238">
+<meta name="description" content="Read the Bible (KJV and WEB) and keep linked study notes. Every name you link connects everywhere it appears.">
+<title>Scripture Vault</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* Layout: one column, phone-first. Reader is home; bottom tabs switch Read / Notes / Vault / Search; a page editor with a thumb toolbar. */
+:root {
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #f4f5f9; --surface: #ffffff; --ink: #1d2238; --muted: #5e6480; --line: #d6d9e6;
+  --accent: #c9952b; --accent-ink: #1d1708; --chrome: #1d2238; --chrome-ink: #f4f5f9;
+  --person: #b4532a; --place: #1f7a5a; --theme: #3557c4; --idea: #8a3fb8;
+  --serif: "Noto Serif", Georgia, "Times New Roman", serif;
+  --sans: system-ui, Roboto, -apple-system, "Segoe UI", sans-serif;
+  --label: "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", system-ui, sans-serif;
+  --mix: 20%; --rs: 19px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12141d; --surface: #1b1e2b; --ink: #e8eaf3; --muted: #9aa0bb; --line: #2c3044;
+  --accent: #e0b04a; --accent-ink: #1d1708; --chrome: #0c0e15; --chrome-ink: #e8eaf3;
+  --person: #ff9466; --place: #55d1a2; --theme: #8fa8ff; --idea: #d29bff; --mix: 26%; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12141d; --surface: #1b1e2b; --ink: #e8eaf3; --muted: #9aa0bb; --line: #2c3044;
+  --accent: #e0b04a; --accent-ink: #1d1708; --chrome: #0c0e15; --chrome-ink: #e8eaf3;
+  --person: #ff9466; --place: #55d1a2; --theme: #8fa8ff; --idea: #d29bff; --mix: 26%; color-scheme: dark }
+
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--chrome); }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.t-person { --c: var(--person); } .t-place { --c: var(--place); } .t-theme { --c: var(--theme); } .t-idea { --c: var(--idea); }
+
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--chrome); color: var(--chrome-ink);
+  padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); padding-block: 8px;
+  display: flex; align-items: center; gap: 8px; min-height: 56px; }
+header .iconbtn { border: 0; background: rgba(255,255,255,.1); color: var(--chrome-ink); border-radius: 10px; min-width: 44px; height: 44px; font-size: 20px; padding: 0 10px; }
+.brand { flex: 1; font-family: var(--serif); font-size: 21px; font-weight: 700; letter-spacing: .01em; }
+.brand small { font-family: var(--label); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); display: block; line-height: 1; }
+#placeBtn { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; color: var(--chrome-ink); font-family: var(--serif); font-size: 22px; font-weight: 700; padding: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#placeBtn span { color: var(--accent); font-size: 16px; }
+.ver { display: flex; background: rgba(255,255,255,.1); border-radius: 10px; padding: 3px; }
+.ver button { border: 0; background: transparent; color: var(--chrome-ink); border-radius: 8px; padding: 8px 10px; font-family: var(--label); font-weight: 700; letter-spacing: .06em; font-size: 15px; }
+.ver button.on { background: var(--accent); color: var(--accent-ink); }
+#docTitle { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--chrome-ink); font-weight: 700; font-size: 20px; padding: 6px 4px; border-bottom: 2px solid transparent; }
+#docTitle:focus { outline: none; border-bottom-color: var(--accent); }
+#docTitle::placeholder { color: color-mix(in srgb, var(--chrome-ink) 55%, transparent); }
+
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 110px; max-width: 720px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* Reader */
+.chap { font-family: var(--serif); font-size: var(--rs); line-height: 1.75; }
+.chap h1 { font-size: 1.6em; margin: 6px 0 4px; text-wrap: balance; }
+.chap .vername { font-family: var(--label); font-weight: 600; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.vs { margin: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer; }
+.vs:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.vs.flash { background: color-mix(in srgb, var(--accent) 30%, transparent); transition: background 1.2s; }
+.vs sup { font-family: var(--label); font-weight: 700; font-size: .62em; color: var(--accent); margin-right: 4px; vertical-align: .45em; }
+.lk { border-radius: 3px; background: color-mix(in srgb, var(--c) var(--mix), transparent); box-shadow: inset 0 -2px 0 var(--c); }
+.nb { font-family: var(--label); font-size: 13px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border-radius: 6px; padding: 0 6px; margin-left: 6px; vertical-align: .2em; }
+.chapnav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chapnav button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 14px; font-weight: 700; }
+.loading { color: var(--muted); padding: 30px 0; text-align: center; }
+
+/* Lists */
+.search { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; font-size: 17px; }
+.newbtn { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 12px; padding: 14px; font-weight: 700; font-size: 18px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+.chip.on { border-color: var(--c, var(--ink)); box-shadow: inset 0 0 0 1px var(--c, var(--ink)); font-weight: 700; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.rows { display: grid; gap: 8px; }
+.row { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; width: 100%; min-width: 0; }
+.row.v { border-left: 6px solid var(--c); }
+.row b { font-size: 18px; overflow-wrap: anywhere; }
+.row .snip { color: var(--muted); font-size: 15px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.row .scr { font-family: var(--serif); color: var(--ink); font-size: 16px; overflow-wrap: anywhere; }
+.row em, .mention em { font-style: normal; font-weight: 700; background: color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 3px; }
+.meta { font-family: var(--label); font-weight: 600; font-size: 14px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.ref { color: var(--accent-ink); background: color-mix(in srgb, var(--accent) 75%, transparent); border-radius: 4px; padding: 0 6px; }
+.ex { color: var(--chrome-ink); background: var(--chrome); border-radius: 4px; padding: 0 6px; }
+.empty, .hint { color: var(--muted); }
+.empty { text-align: center; padding: 24px 8px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 10px; font-family: var(--label); font-weight: 700; font-size: 17px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.seg button.on { background: var(--ink); color: var(--bg); }
+h2.lbl, .lbl { font-family: var(--label); font-weight: 700; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+/* Page editor */
+.types { display: flex; gap: 6px; flex-wrap: wrap; }
+.field { display: grid; gap: 4px; }
+.fld { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: 16px; width: 100%; box-sizing: border-box; }
+.quote { border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 12px 12px 0; padding: 10px 14px; display: grid; gap: 6px; }
+.quote p { margin: 0; font-family: var(--serif); font-size: 17px; line-height: 1.6; }
+.quote button { justify-self: start; border: 0; background: transparent; color: var(--theme); font-weight: 700; padding: 0; }
+.ed { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.ed .bd, .ed textarea { font-family: var(--sans); font-size: 19px; line-height: 1.6; padding: 14px 16px; margin: 0; border: 0; box-sizing: border-box; width: 100%;
+  white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; letter-spacing: normal; tab-size: 4; }
+.ed .bd { position: absolute; inset: 0; color: transparent; pointer-events: none; overflow: hidden; }
+.ed textarea { position: relative; display: block; background: transparent; resize: none; overflow: hidden; min-height: 40vh; caret-color: var(--ink); }
+.ed textarea:focus { outline: none; }
+.ed:focus-within { border-color: var(--accent); }
+mark { color: transparent; border-radius: 3px; background: color-mix(in srgb, var(--c) var(--mix), transparent); box-shadow: inset 0 -2px 0 var(--c); }
+mark.r { background: color-mix(in srgb, var(--accent) 28%, transparent); box-shadow: inset 0 -2px 0 var(--accent); }
+mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
+.mention { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 10px 14px; display: grid; gap: 2px; width: 100%; min-width: 0; }
+.mention span { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+.mention .scr { font-family: var(--serif); color: var(--ink); font-size: 16px; }
+.findbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px; font-weight: 700; }
+
+/* Bottom bars */
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line);
+  padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
+  padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 6px; }
+#tabs { grid-template-columns: repeat(4, 1fr); }
+#tabs button { border: 0; background: transparent; border-radius: 10px; padding: 6px 2px; display: grid; justify-items: center; gap: 0; font-family: var(--label); font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+#tabs button b { font-size: 22px; line-height: 1.2; font-family: var(--sans); }
+#tabs button.on { color: var(--ink); background: color-mix(in srgb, var(--accent) 22%, transparent); }
+#tools { grid-template-columns: 56px 1fr 56px 56px; gap: 8px; padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+#tools button { height: 56px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: 22px; }
+#tools #linkBtn { background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 700; font-size: 19px; }
+#pill { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 7;
+  border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; font-size: 17px; background: var(--ink); color: var(--bg);
+  display: flex; align-items: center; gap: 8px; max-width: calc(100% - 32px); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+#pill .dot { box-shadow: 0 0 0 2px var(--bg); }
+#pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Sheet + toast */
+#sheet { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; }
+#sheet .card { background: var(--surface); width: 100%; border-radius: 18px 18px 0 0; max-height: 88%; overflow: auto; box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; }
+#sheet h2 { margin: 0; font-family: var(--serif); font-size: 22px; }
+#sheet p { margin: 0; color: var(--muted); }
+#sheet .vtext { font-family: var(--serif); color: var(--ink); font-size: 18px; line-height: 1.6; }
+.sbtn { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 14px; font-weight: 700; text-align: left; }
+.sbtn.primary { background: var(--accent); color: var(--accent-ink); border: 0; }
+.sbtn.danger { color: var(--person); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.grid.n { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+.grid button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 4px; font-size: 15px; font-weight: 700; }
+.grid button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.words { display: flex; flex-wrap: wrap; gap: 6px; }
+.words button { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; font-family: var(--serif); font-size: 17px; }
+.words button.sel { background: color-mix(in srgb, var(--accent) 45%, transparent); border-color: var(--accent); }
+#sheet textarea { width: 100%; box-sizing: border-box; min-height: 140px; border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: 14px; background: var(--bg); }
+#toast { position: fixed; left: 50%; transform: translateX(-50%); top: calc(70px + env(safe-area-inset-top, 0px)); z-index: 30;
+  background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 16px; font-weight: 700; max-width: calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference) { #pill, #toast { animation: up .18s ease-out; } @keyframes up { from { opacity: 0; translate: 0 8px; } } }
+</style>
+</head>
+<body>
+<header id="hdr"></header>
+<main id="main"></main>
+<nav id="tabs" class="bar" aria-label="Sections">
+  <button data-tab="read"><b>📖</b>Read</button>
+  <button data-tab="notes"><b>✎</b>Notes</button>
+  <button data-tab="vault"><b>◆</b>Vault</button>
+  <button data-tab="search"><b>⌕</b>Search</button>
+</nav>
+<nav id="tools" class="bar" hidden aria-label="Editing tools">
+  <button id="prevW" aria-label="Move cursor back one word">◀</button>
+  <button id="linkBtn">🔗 Link word</button>
+  <button id="nextW" aria-label="Move cursor forward one word">▶</button>
+  <button id="refBtn" aria-label="Insert the verse you are reading">📖</button>
+</nav>
+<button id="pill" hidden></button>
+<div id="sheet" hidden><div class="card" id="sheetCard"></div></div>
+<div id="toast" hidden></div>
+
+<script>
+(function () {
+  var KEY = 'scripturevault.v1';
+  var BOOKS = [["Genesis",50],["Exodus",40],["Leviticus",27],["Numbers",36],["Deuteronomy",34],["Joshua",24],["Judges",21],["Ruth",4],["1 Samuel",31],["2 Samuel",24],["1 Kings",22],["2 Kings",25],["1 Chronicles",29],["2 Chronicles",36],["Ezra",10],["Nehemiah",13],["Esther",10],["Job",42],["Psalms",150],["Proverbs",31],["Ecclesiastes",12],["Song of Solomon",8],["Isaiah",66],["Jeremiah",52],["Lamentations",5],["Ezekiel",48],["Daniel",12],["Hosea",14],["Joel",3],["Amos",9],["Obadiah",1],["Jonah",4],["Micah",7],["Nahum",3],["Habakkuk",3],["Zephaniah",3],["Haggai",2],["Zechariah",14],["Malachi",4],["Matthew",28],["Mark",16],["Luke",24],["John",21],["Acts",28],["Romans",16],["1 Corinthians",16],["2 Corinthians",13],["Galatians",6],["Ephesians",6],["Philippians",4],["Colossians",4],["1 Thessalonians",5],["2 Thessalonians",3],["1 Timothy",6],["2 Timothy",4],["Titus",3],["Philemon",1],["Hebrews",13],["James",5],["1 Peter",5],["2 Peter",3],["1 John",5],["2 John",1],["3 John",1],["Jude",1],["Revelation",22]];
+  // Short names people write in notes (book number → extra names)
+  var ABBR = {1:'Gen|Gn',2:'Exod|Exo',3:'Lev|Lv',4:'Num|Nm',5:'Deut|Dt',6:'Josh|Jos',7:'Judg|Jdg',8:'Rth',9:'1 Sam|1 Sa',10:'2 Sam|2 Sa',
+    11:'1 Kgs|1 Ki',12:'2 Kgs|2 Ki',13:'1 Chron|1 Chr',14:'2 Chron|2 Chr',15:'Ezr',16:'Neh',17:'Esth|Est',18:'Jb',19:'Psalm|Ps|Psa|Pss',20:'Prov|Prv',
+    21:'Eccl|Ecc|Eccles',22:'Song|Song of Songs',23:'Isa',24:'Jer',25:'Lam',26:'Ezek|Eze|Ezk',27:'Dan|Dn',28:'Hos',29:'Jl',30:'Amo',31:'Obad',32:'Jon|Jnh',
+    33:'Mic|Mc',34:'Nah',35:'Hab|Hb',36:'Zeph|Zep',37:'Hag|Hg',38:'Zech|Zec',39:'Mal|Ml',40:'Matt|Mt',41:'Mk|Mrk',42:'Lk|Luk',43:'Jn|Jhn',44:'Acts',45:'Rom|Rm',
+    46:'1 Cor|1 Co',47:'2 Cor|2 Co',48:'Gal',49:'Eph',50:'Phil|Php',51:'Col',52:'1 Thess|1 Th',53:'2 Thess|2 Th',54:'1 Tim|1 Ti',
+    55:'2 Tim|2 Ti',56:'Tit',57:'Philem|Phm',58:'Heb',59:'Jas|Jm',60:'1 Pet|1 Pe|1 Pt',61:'2 Pet|2 Pe|2 Pt',62:'1 Jn|1 Jo',63:'2 Jn|2 Jo',64:'3 Jn|3 Jo',
+    65:'Jud|Jd',66:'Rev|Rv|Revelations'};
+  var VERS = { kjv: 'King James Version', web: 'World English Bible' };
+  var TYPES = { person: 'Person', place: 'Place', theme: 'Theme', idea: 'Idea' };
+  var $ = function (id) { return document.getElementById(id); };
+  var S, view = 'read', stack = [], cur = null, tab = 'read', typeFilter = '', query = '', sMode = 'bible', sQuery = '';
+  var linkRe = null, lookup = {}, ranges = [], refRe, refMap = {}, cache = {};
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function when(t) { var d = new Date(t); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  function toast(m) { var t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2200); }
+  function refStr(r) { return BOOKS[r.b - 1][0] + ' ' + r.c + (r.v ? ':' + r.v + (r.v2 ? '-' + r.v2 : '') : ''); }
+
+  // ── Storage ──
+  function seed() {
+    var t = Date.now();
+    return {
+      ver: 'kjv', pos: { b: 43, c: 3, v: 16 }, size: 19,
+      vault: [
+        { id: uid(), type: 'person', title: 'Moses', aliases: [], text: 'Led Israel out of Egypt. Received the law at Sinai.', ex: true, updated: t },
+        { id: uid(), type: 'place', title: 'Jerusalem', aliases: ['Zion'], text: '', ex: true, updated: t },
+        { id: uid(), type: 'theme', title: 'grace', aliases: [], text: 'Favor that is given, not earned. Compare Ephesians 2:8 with Romans 3:24.', ex: true, updated: t }
+      ],
+      notes: [
+        { id: uid(), title: 'John 3:16', ref: { b: 43, c: 3, v: 16 }, ex: true, updated: t,
+          text: 'The whole gospel in one verse. Jesus is talking with Nicodemus at night.\n\nCompare with Romans 5:8, where Paul says the same thing. Ties into grace and to the serpent Moses lifted up (John 3:14).' }
+      ]
+    };
+  }
+  function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.notes && s.vault) return s; } catch (e) {} return seed(); }
+  var saveT;
+  function save() { clearTimeout(saveT); saveT = setTimeout(function () { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Could not save. Copy a backup from the menu.'); } }, 300); }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+  // ── Bible text ──
+  function loadBook(ver, b) {
+    var k = ver + b; if (cache[k]) return Promise.resolve(cache[k]);
+    return fetch('data/' + ver + '/' + b + '.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) { cache[k] = d; return d; });
+  }
+  function loadAll(ver, prog) {
+    var i = 0, n = 66;
+    function next() { if (i >= n) return Promise.resolve(); var b = ++i; prog && prog(b); return loadBook(ver, b).then(next); }
+    return next();
+  }
+
+  // ── Linking engine: vault names, and verse references ──
+  function buildMap() {
+    lookup = {}; var terms = [];
+    S.vault.forEach(function (v) {
+      [v.title].concat(v.aliases || []).forEach(function (t) {
+        t = (t || '').trim(); if (t.length < 2) return; var k = t.toLowerCase(); if (lookup[k]) return; lookup[k] = v.id; terms.push(t);
+      });
+    });
+    terms.sort(function (a, b) { return b.length - a.length; });
+    linkRe = terms.length ? new RegExp('(?<![\\p{L}\\p{N}])(' + terms.map(escRe).join('|') + ')(?![\\p{L}\\p{N}])', 'giu') : null;
+  }
+  function buildRefs() {
+    var names = [];
+    BOOKS.forEach(function (bk, i) {
+      [bk[0]].concat(ABBR[i + 1] ? ABBR[i + 1].split('|') : []).forEach(function (n) { refMap[n.toLowerCase().replace(/\s+/g, '')] = i + 1; names.push(n); });
+    });
+    names.sort(function (a, b) { return b.length - a.length; });
+    refRe = new RegExp('(?<![\\p{L}\\p{N}])(' + names.map(function (n) { return escRe(n).replace(/ /g, '\\s*'); }).join('|') + ')\\.?\\s+(\\d{1,3})(?::(\\d{1,3})(?:\\s*[-–]\\s*(\\d{1,3}))?)?(?![\\p{L}\\p{N}])', 'giu');
+  }
+  function findRefs(text) {
+    var out = []; if (!text) return out; refRe.lastIndex = 0; var m;
+    while ((m = refRe.exec(text))) {
+      var b = refMap[m[1].toLowerCase().replace(/\s+/g, '')];
+      if (/^[a-z]/.test(m[1]) && m[1].replace(/\W/g, '').length <= 3) b = 0; // short forms must be capitalized ("jn 3" vs "Jn 3")
+      var c = +m[2];
+      if (b && c >= 1 && c <= BOOKS[b - 1][1]) out.push({ s: m.index, e: m.index + m[0].length, r: { b: b, c: c, v: m[3] ? +m[3] : 0, v2: m[4] ? +m[4] : 0 } });
+    }
+    return out;
+  }
+  function findLinks(text, selfId) {
+    var out = []; if (!linkRe || !text) return out; linkRe.lastIndex = 0; var m;
+    while ((m = linkRe.exec(text))) {
+      var id = lookup[m[0].toLowerCase()];
+      if (id && id !== selfId) out.push({ s: m.index, e: m.index + m[0].length, id: id });
+      if (!m[0].length) linkRe.lastIndex++;
+    }
+    return out;
+  }
+  function allRanges(text, selfId) {
+    var refs = findRefs(text);
+    var links = findLinks(text, selfId).filter(function (l) { return !refs.some(function (r) { return l.s < r.e && l.e > r.s; }); });
+    return refs.concat(links).sort(function (a, b) { return a.s - b.s; });
+  }
+  function vault(id) { for (var i = 0; i < S.vault.length; i++) if (S.vault[i].id === id) return S.vault[i]; }
+  function noteById(id) { for (var i = 0; i < S.notes.length; i++) if (S.notes[i].id === id) return S.notes[i]; }
+  function docOf(c) { return c.kind === 'note' ? noteById(c.id) : vault(c.id); }
+  function noteTitle(n) { return n.title || (n.ref ? refStr(n.ref) : '') || (n.text || '').trim().split('\n')[0].slice(0, 60) || 'Untitled note'; }
+  function notesFor(b, c, v) { return S.notes.filter(function (n) { return n.ref && n.ref.b === b && n.ref.c === c && (v == null || n.ref.v === v); }); }
+
+  // ── Navigation ──
+  function state() {
+    if (view === 'doc') { var ta = $('ta'); return { view: 'doc', kind: cur.kind, id: cur.id, pos: ta ? ta.selectionStart : 0 }; }
+    if (view === 'read') return { view: 'read', b: S.pos.b, c: S.pos.c, v: S.pos.v, y: window.scrollY };
+    return { view: view };
+  }
+  function show(st) {
+    closeSheet(); $('pill').hidden = true;
+    if (st.view === 'doc') return openDoc({ kind: st.kind, id: st.id }, { pos: st.pos });
+    if (st.view === 'read') { S.pos = { b: st.b, c: st.c, v: st.v || 0 }; save(); return renderRead(st.v, st.y); }
+    if (st.view === 'notes') return renderNotes();
+    if (st.view === 'vault') return renderVault();
+    if (st.view === 'search') return renderSearch();
+  }
+  function go(st) { stack.push(state()); show(st); }
+  function back() { var p = stack.pop(); if (p) { show(p); return true; } if (view !== 'read') { setTab('read'); show({ view: 'read', b: S.pos.b, c: S.pos.c, v: S.pos.v }); return true; } return false; }
+  function setTab(t) { tab = t; [].forEach.call(document.querySelectorAll('#tabs button'), function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); }); }
+  [].forEach.call(document.querySelectorAll('#tabs button'), function (b) {
+    b.onclick = function () { stack = []; setTab(b.getAttribute('data-tab')); show(b.getAttribute('data-tab') === 'read' ? { view: 'read', b: S.pos.b, c: S.pos.c } : { view: b.getAttribute('data-tab') }); window.scrollTo(0, 0); };
+  });
+  function bars(doc) { $('tabs').hidden = doc; $('tools').hidden = !doc; }
+
+  // ── Reader ──
+  function header(html) { $('hdr').innerHTML = html; }
+  function verHtml() { return '<div class="ver">' + Object.keys(VERS).map(function (k) { return '<button data-ver="' + k + '" class="' + (S.ver === k ? 'on' : '') + '">' + k.toUpperCase() + '</button>'; }).join('') + '</div>'; }
+  function wireVer(after) { [].forEach.call(document.querySelectorAll('[data-ver]'), function (b) { b.onclick = function () { S.ver = b.getAttribute('data-ver'); save(); after(); }; }); }
+  function linkText(t) {
+    var r = findLinks(t), h = '', i = 0;
+    r.forEach(function (x) { var v = vault(x.id); h += esc(t.slice(i, x.s)) + '<span class="lk t-' + v.type + '" data-id="' + x.id + '">' + esc(t.slice(x.s, x.e)) + '</span>'; i = x.e; });
+    return h + esc(t.slice(i));
+  }
+  function renderRead(focusV, y) {
+    view = 'read'; cur = null; setTab('read'); bars(false);
+    var b = S.pos.b, c = S.pos.c;
+    header('<button id="placeBtn">' + esc(BOOKS[b - 1][0]) + ' ' + c + ' <span>▾</span></button>' + verHtml() + '<button class="iconbtn" id="menuBtn" aria-label="Menu">⋯</button>');
+    $('placeBtn').onclick = openPicker; $('menuBtn').onclick = openMenu; wireVer(function () { renderRead(S.pos.v); });
+    var m = $('main'); m.innerHTML = '<div class="wrap"><div class="loading">Opening ' + esc(BOOKS[b - 1][0]) + ' ' + c + '…</div></div>';
+    loadBook(S.ver, b).then(function (d) {
+      if (view !== 'read' || S.pos.b !== b || S.pos.c !== c) return;
+      var vs = d.c[c - 1] || [], h = '<div class="wrap"><div class="chap"><div class="vername">' + VERS[S.ver] + '</div><h1>' + esc(d.n) + ' ' + c + '</h1>';
+      vs.forEach(function (t, i) {
+        var n = notesFor(b, c, i + 1).length;
+        h += '<p class="vs" data-v="' + (i + 1) + '"><sup>' + (i + 1) + '</sup>' + linkText(t) + (n ? '<span class="nb">✎' + (n > 1 ? n : '') + '</span>' : '') + '</p>';
+      });
+      h += '</div><div class="chapnav"><button id="prevC">‹ Previous</button><button id="nextC">Next ›</button></div>' +
+        '<p class="hint">Tap a verse to write a note or link a name. Tap a colored word to open its vault page.</p></div>';
+      m.innerHTML = h;
+      $('prevC').onclick = function () { step(-1); }; $('nextC').onclick = function () { step(1); };
+      m.querySelector('.chap').onclick = function (e) {
+        var lk = e.target.closest('.lk'); if (lk) { var p = lk.closest('.vs'); S.pos.v = p ? +p.getAttribute('data-v') : 0; return go({ view: 'doc', kind: 'vault', id: lk.getAttribute('data-id') }); }
+        var p2 = e.target.closest('.vs'); if (p2) verseSheet(+p2.getAttribute('data-v'), vs[+p2.getAttribute('data-v') - 1]);
+      };
+      if (y != null) window.scrollTo(0, y);
+      else if (focusV) { var el = m.querySelector('.vs[data-v="' + focusV + '"]'); if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(function () { el.classList.remove('flash'); }, 1400); } }
+      else window.scrollTo(0, 0);
+    }).catch(function () { m.innerHTML = '<div class="wrap"><p class="empty">Could not open this book. Connect once to download it, then it works offline.</p></div>'; });
+  }
+  function step(d) {
+    var b = S.pos.b, c = S.pos.c + d;
+    if (c < 1) { if (b === 1) return; b--; c = BOOKS[b - 1][1]; }
+    if (c > BOOKS[b - 1][1]) { if (b === 66) return; b++; c = 1; }
+    S.pos = { b: b, c: c, v: 0 }; save(); renderRead();
+  }
+  function openPicker() {
+    var h = '<h2>Choose a book</h2><span class="lbl">Old Testament</span><div class="grid">';
+    BOOKS.forEach(function (bk, i) { if (i === 39) h += '</div><span class="lbl">New Testament</span><div class="grid">'; h += '<button data-b="' + (i + 1) + '" class="' + (S.pos.b === i + 1 ? 'on' : '') + '">' + esc(bk[0]) + '</button>'; });
+    sheet(h + '</div>');
+    [].forEach.call(document.querySelectorAll('[data-b]'), function (x) { x.onclick = function () { pickChapter(+x.getAttribute('data-b')); }; });
+  }
+  function pickChapter(b) {
+    var n = BOOKS[b - 1][1];
+    if (n === 1) { closeSheet(); S.pos = { b: b, c: 1, v: 0 }; save(); return renderRead(); }
+    var h = '<h2>' + esc(BOOKS[b - 1][0]) + '</h2><div class="grid n">';
+    for (var c = 1; c <= n; c++) h += '<button data-c="' + c + '">' + c + '</button>';
+    sheet(h + '</div><button class="sbtn" id="pkBack">‹ All books</button>');
+    $('pkBack').onclick = openPicker;
+    [].forEach.call(document.querySelectorAll('[data-c]'), function (x) { x.onclick = function () { closeSheet(); S.pos = { b: b, c: +x.getAttribute('data-c'), v: 0 }; save(); renderRead(); }; });
+  }
+  function verseSheet(v, text) {
+    var b = S.pos.b, c = S.pos.c, r = { b: b, c: c, v: v }; S.pos.v = v; save();
+    var ns = notesFor(b, c, v), words = text.split(/\s+/);
+    var h = '<h2>' + esc(refStr(r)) + ' <span class="meta" style="display:inline">' + S.ver.toUpperCase() + '</span></h2><div class="vtext">' + esc(text) + '</div>' +
+      '<button class="sbtn primary" id="vNote">✎ Write a note on this verse</button>';
+    ns.forEach(function (n) { h += '<button class="sbtn" data-n="' + n.id + '">Open note: ' + esc(noteTitle(n)) + '</button>'; });
+    h += '<span class="lbl">Link a name or idea: tap a word (tap a second word to link a phrase)</span><div class="words" id="words">' +
+      words.map(function (w, i) { return '<button data-i="' + i + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
+      '<button class="sbtn primary" id="vLink" hidden></button><button class="sbtn" id="vCopy">Copy verse</button>';
+    sheet(h);
+    $('vNote').onclick = function () {
+      var n = { id: uid(), title: refStr(r), ref: r, text: '', updated: Date.now() }; S.notes.unshift(n); save();
+      go({ view: 'doc', kind: 'note', id: n.id }); setTimeout(function () { $('ta') && $('ta').focus(); }, 50);
+    };
+    [].forEach.call(document.querySelectorAll('[data-n]'), function (x) { x.onclick = function () { go({ view: 'doc', kind: 'note', id: x.getAttribute('data-n') }); }; });
+    var a = -1, z = -1, btns = $('words').children;
+    function clean(i, j) { return words.slice(i, j + 1).join(' ').replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').replace(/[’']s$/u, ''); }
+    [].forEach.call(btns, function (x) {
+      x.onclick = function () {
+        var i = +x.getAttribute('data-i');
+        if (a < 0 || z >= 0 || i < a) { a = i; z = -1; } else if (i === a) { a = -1; } else z = i;
+        [].forEach.call(btns, function (y, k) { y.classList.toggle('sel', a >= 0 && k >= a && k <= (z >= 0 ? z : a)); });
+        var w = a >= 0 ? clean(a, z >= 0 ? z : a) : '', L = $('vLink');
+        L.hidden = w.length < 2; L.textContent = (lookup[w.toLowerCase()] ? 'Open ' : '🔗 Link ') + '“' + w + '”';
+        L.onclick = function () { linkTerm(w); };
+      };
+    });
+    $('vCopy').onclick = function () { copy(text + ' (' + refStr(r) + ', ' + S.ver.toUpperCase() + ')'); };
+  }
+  function linkTerm(w) {
+    var id = lookup[w.toLowerCase()];
+    if (!id) { var v = { id: uid(), type: 'idea', title: w, aliases: [], text: '', updated: Date.now() }; S.vault.push(v); id = v.id; buildMap(); save(); toast('Added “' + w + '” to the vault'); }
+    go({ view: 'doc', kind: 'vault', id: id });
+  }
+
+  // ── Notes & Vault lists ──
+  function listHeader(title) {
+    header('<div class="brand"><small>Scripture Vault</small>' + title + '</div><button class="iconbtn" id="menuBtn" aria-label="Menu">⋯</button>');
+    $('menuBtn').onclick = openMenu;
+  }
+  function counts() {
+    var c = {};
+    S.notes.concat(S.vault).forEach(function (d) { findLinks(d.text, d.type ? d.id : null).forEach(function (r) { c[r.id] = (c[r.id] || 0) + 1; }); });
+    return c;
+  }
+  function renderNotes() {
+    view = 'notes'; cur = null; setTab('notes'); bars(false); listHeader('Notes');
+    $('main').innerHTML = '<div class="wrap"><input id="q" class="search" type="search" placeholder="Search your notes" value="' + esc(query) + '" aria-label="Search notes">' +
+      '<button class="newbtn" id="newNote">+ New note</button><div class="rows" id="rows"></div></div>';
+    $('q').oninput = function () { query = this.value; fill(); };
+    $('newNote').onclick = function () { var n = { id: uid(), title: '', text: '', updated: Date.now() }; S.notes.unshift(n); save(); go({ view: 'doc', kind: 'note', id: n.id }); setTimeout(function () { $('ta') && $('ta').focus(); }, 50); };
+    function fill() {
+      var q = query.trim().toLowerCase(), box = $('rows'); box.innerHTML = '';
+      var list = S.notes.filter(function (n) { return !q || (noteTitle(n) + ' ' + n.text).toLowerCase().indexOf(q) >= 0; }).sort(function (a, b) { return b.updated - a.updated; });
+      if (!list.length) box.innerHTML = '<p class="empty">' + (q ? 'No notes match.' : 'No notes yet. Tap a verse while reading and choose Write a note.') + '</p>';
+      list.forEach(function (n) {
+        var x = document.createElement('button'); x.className = 'row'; var body = (n.text || '').replace(/\s+/g, ' ').trim();
+        x.innerHTML = '<b>' + esc(noteTitle(n)) + '</b><span class="snip">' + esc(body || 'Empty') + '</span><span class="meta">' + (n.ref ? '<span class="ref">' + esc(refStr(n.ref)) + '</span>' : '') +
+          '<span>' + when(n.updated) + '</span>' + (n.ex ? '<span class="ex">Example</span>' : '') + '</span>';
+        x.onclick = function () { go({ view: 'doc', kind: 'note', id: n.id }); }; box.appendChild(x);
+      });
+    }
+    fill();
+  }
+  function renderVault() {
+    view = 'vault'; cur = null; setTab('vault'); bars(false); listHeader('Vault');
+    $('main').innerHTML = '<div class="wrap"><input id="q" class="search" type="search" placeholder="Search the vault" value="' + esc(query) + '" aria-label="Search vault">' +
+      '<div class="filters" id="filters"></div><div class="rows" id="rows"></div></div>';
+    var f = $('filters');
+    [['', 'All']].concat(Object.keys(TYPES).map(function (k) { return [k, TYPES[k]]; })).forEach(function (o) {
+      var x = document.createElement('button'); x.className = 'chip' + (o[0] ? ' t-' + o[0] : '') + (typeFilter === o[0] ? ' on' : '');
+      x.innerHTML = (o[0] ? '<span class="dot"></span>' : '') + o[1]; x.onclick = function () { typeFilter = o[0]; renderVault(); }; f.appendChild(x);
+    });
+    $('q').oninput = function () { query = this.value; fill(); };
+    function fill() {
+      var q = query.trim().toLowerCase(), box = $('rows'), c = counts(); box.innerHTML = '';
+      var list = S.vault.filter(function (v) { return (!typeFilter || v.type === typeFilter) && (!q || (v.title + ' ' + v.aliases.join(' ') + ' ' + v.text).toLowerCase().indexOf(q) >= 0); })
+        .sort(function (a, b) { return a.title.localeCompare(b.title); });
+      if (!list.length) box.innerHTML = '<p class="empty">' + (q || typeFilter ? 'Nothing matches.' : 'Empty. While reading, tap a verse, tap a name, then Link.') + '</p>';
+      list.forEach(function (v) {
+        var x = document.createElement('button'); x.className = 'row v t-' + v.type;
+        x.innerHTML = '<b>' + esc(v.title) + '</b>' + (v.text ? '<span class="snip">' + esc(v.text.replace(/\s+/g, ' ')) + '</span>' : '') +
+          '<span class="meta"><span>' + TYPES[v.type] + '</span><span>' + (c[v.id] || 0) + ' in your notes</span>' + (v.aliases.length ? '<span>Also: ' + esc(v.aliases.join(', ')) + '</span>' : '') + (v.ex ? '<span class="ex">Example</span>' : '') + '</span>';
+        x.onclick = function () { go({ view: 'doc', kind: 'vault', id: v.id }); }; box.appendChild(x);
+      });
+    }
+    fill();
+  }
+
+  // ── Search ──
+  function renderSearch() {
+    view = 'search'; cur = null; setTab('search'); bars(false);
+    header('<div class="brand"><small>Scripture Vault</small>Search</div>' + verHtml());
+    wireVer(function () { renderSearch(); });
+    $('main').innerHTML = '<div class="wrap"><div class="seg"><button id="sB" class="' + (sMode === 'bible' ? 'on' : '') + '">Bible</button><button id="sN" class="' + (sMode === 'notes' ? 'on' : '') + '">My notes</button></div>' +
+      '<form id="sf"><input id="sq" class="search" type="search" enterkeyhint="search" placeholder="' + (sMode === 'bible' ? 'A word or phrase, e.g. living water' : 'Search notes and vault') + '" value="' + esc(sQuery) + '" aria-label="Search"></form>' +
+      '<div class="rows" id="rows"></div></div>';
+    $('sB').onclick = function () { sMode = 'bible'; renderSearch(); }; $('sN').onclick = function () { sMode = 'notes'; renderSearch(); };
+    $('sf').onsubmit = function (e) { e.preventDefault(); sQuery = $('sq').value; $('sq').blur(); run(); };
+    if (sMode === 'notes') $('sq').oninput = function () { sQuery = this.value; run(); };
+    function run() {
+      var q = sQuery.trim(), box = $('rows'); if (!q) { box.innerHTML = ''; return; }
+      if (sMode === 'notes') {
+        var ql = q.toLowerCase(); box.innerHTML = '';
+        S.notes.map(function (n) { return { kind: 'note', d: n, t: noteTitle(n) }; }).concat(S.vault.map(function (v) { return { kind: 'vault', d: v, t: v.title }; }))
+          .filter(function (x) { return (x.t + ' ' + x.d.text).toLowerCase().indexOf(ql) >= 0; })
+          .forEach(function (x) { var r = document.createElement('button'); r.className = 'row'; r.innerHTML = '<span class="meta">' + (x.kind === 'note' ? 'Note' : 'Vault') + '</span><b>' + esc(x.t) + '</b>'; r.onclick = function () { go({ view: 'doc', kind: x.kind, id: x.d.id }); }; box.appendChild(r); });
+        if (!box.children.length) box.innerHTML = '<p class="empty">Nothing in your notes matches.</p>';
+        return;
+      }
+      var re = new RegExp('(?<![\\p{L}\\p{N}])' + escRe(q).replace(/\s+/g, '\\s+') + '(?![\\p{L}\\p{N}])', 'giu');
+      bibleSearch(re, box, 300);
+    }
+    if (sQuery) run();
+  }
+  function bibleSearch(re, box, max, onDone) {
+    box.innerHTML = '<p class="loading" id="prog">Searching…</p>';
+    var ver = S.ver;
+    loadAll(ver, function (b) { var p = $('prog'); if (p) p.textContent = 'Searching ' + BOOKS[b - 1][0] + '…'; }).then(function () {
+      var hits = [], total = 0;
+      for (var b = 1; b <= 66; b++) cache[ver + b].c.forEach(function (ch, ci) { ch.forEach(function (t, vi) {
+        re.lastIndex = 0; if (re.test(t)) { total++; if (hits.length < max) hits.push({ b: b, c: ci + 1, v: vi + 1, t: t }); }
+      }); });
+      box.innerHTML = '<p class="meta" style="margin:0">' + total + ' verse' + (total === 1 ? '' : 's') + ' in the ' + ver.toUpperCase() + (total > max ? ' · showing the first ' + max : '') + '</p>';
+      hits.forEach(function (h) {
+        var x = document.createElement('button'); x.className = 'row';
+        re.lastIndex = 0; var html = esc(h.t).replace(new RegExp(re.source, 'giu'), function (m) { return '<em>' + m + '</em>'; });
+        x.innerHTML = '<span class="meta"><span class="ref">' + esc(refStr(h)) + '</span></span><span class="scr">' + html + '</span>';
+        x.onclick = function () { go({ view: 'read', b: h.b, c: h.c, v: h.v }); }; box.appendChild(x);
+      });
+      onDone && onDone(total);
+    }).catch(function () { box.innerHTML = '<p class="empty">Could not load the whole Bible. Connect once so it can save for offline use.</p>'; });
+  }
+
+  // ── Page editor (a note or a vault page) ──
+  function openDoc(c, opt) {
+    opt = opt || {}; var d = docOf(c); if (!d) return back() || renderRead();
+    view = 'doc'; cur = c; bars(true); $('pill').hidden = true;
+    var isV = c.kind === 'vault';
+    header('<button class="iconbtn" id="backBtn" aria-label="Back">←</button><input id="docTitle" aria-label="Title" placeholder="' + (isV ? 'Name' : 'Note title') + '" value="' + esc(d.title || '') + '"><button class="iconbtn" id="docMenu" aria-label="Page options">⋯</button>');
+    $('backBtn').onclick = back; $('docMenu').onclick = openDocMenu;
+    var t = $('docTitle'), before = d.title;
+    t.oninput = function () { d.title = t.value; d.updated = Date.now(); save(); };
+    t.onchange = function () {
+      if (!isV) return; var old = (before || '').trim(), nw = (d.title || '').trim();
+      if (old && nw && old.toLowerCase() !== nw.toLowerCase() && d.aliases.map(function (a) { return a.toLowerCase(); }).indexOf(old.toLowerCase()) < 0) { d.aliases.push(old); $('aliases').value = d.aliases.join(', '); toast('Kept “' + old + '” as another name so old notes still link'); }
+      before = d.title; buildMap(); paint(); save();
+    };
+    t.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('ta').focus(); } };
+    $('main').innerHTML = '<div class="wrap">' +
+      (!isV && d.ref ? '<div class="quote" id="quote"><span class="lbl">' + esc(refStr(d.ref)) + ' · ' + S.ver.toUpperCase() + '</span><p id="qText">…</p><button id="qGo">Read in context ›</button></div>' : '') +
+      (isV ? '<div class="types" id="types"></div><label class="field"><span class="lbl">Also called (comma between names)</span><input id="aliases" class="fld" value="' + esc(d.aliases.join(', ')) + '" placeholder="Other names, spellings"></label><span class="lbl">Your notes</span>' : '') +
+      '<div class="ed"><div class="bd" id="bd" aria-hidden="true"></div><textarea id="ta" spellcheck="true" autocapitalize="sentences" placeholder="' +
+      (isV ? 'What you know about this. Come back anytime to add more.' : 'Tap here, then the mic on your keyboard to talk. Verse references like John 3:16 link automatically.') + '">' + esc(d.text || '') + '</textarea></div>' +
+      (isV ? '<span class="lbl">Mentioned in your notes</span><div class="rows" id="mentions"></div><button class="findbtn" id="findBible">⌕ Find “' + esc(d.title) + '” in the Bible</button><div class="rows" id="bibleHits"></div>' :
+        '<p class="hint">Put the cursor on a word (or select a few words), then tap 🔗 Link word or press Tab. 📖 adds the verse you were reading.</p>') + '</div>';
+    if (!isV && d.ref) {
+      loadBook(S.ver, d.ref.b).then(function (bk) { var ch = bk.c[d.ref.c - 1] || [], a = d.ref.v || 1, z = d.ref.v2 || a; $('qText') && ($('qText').textContent = ch.slice(a - 1, z).join(' ')); }).catch(function () {});
+      $('qGo').onclick = function () { go({ view: 'read', b: d.ref.b, c: d.ref.c, v: d.ref.v }); };
+    }
+    if (isV) {
+      var tb = $('types');
+      Object.keys(TYPES).forEach(function (k) {
+        var x = document.createElement('button'); x.className = 'chip t-' + k + (d.type === k ? ' on' : ''); x.innerHTML = '<span class="dot"></span>' + TYPES[k];
+        x.onclick = function () { d.type = k; save(); [].forEach.call(tb.children, function (y) { y.classList.toggle('on', y === x); }); }; tb.appendChild(x);
+      });
+      $('aliases').onchange = function () { d.aliases = this.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean); d.updated = Date.now(); buildMap(); paint(); save(); };
+      renderMentions();
+      $('findBible').onclick = function () {
+        var terms = [d.title].concat(d.aliases).filter(function (x) { return x && x.trim().length > 1; }).sort(function (a, b) { return b.length - a.length; });
+        var re = new RegExp('(?<![\\p{L}\\p{N}])(' + terms.map(escRe).join('|') + ')(?![\\p{L}\\p{N}])', 'giu');
+        bibleSearch(re, $('bibleHits'), 150);
+      };
+    }
+    var ta = $('ta');
+    ta.addEventListener('input', function () { d.text = ta.value; d.updated = Date.now(); paint(); save(); $('pill').hidden = true; });
+    ta.addEventListener('click', function () { setTimeout(checkPill, 0); });
+    ta.addEventListener('keyup', function (e) { if (/Arrow|Home|End/.test(e.key)) checkPill(); });
+    ta.addEventListener('keydown', function (e) { if (e.key === 'Tab') { e.preventDefault(); linkWord(); } });
+    window.scrollTo(0, 0); paint();
+    if (opt.pos != null) {
+      try { ta.setSelectionRange(opt.pos, opt.pos); } catch (e) {}
+      var mk = document.querySelector('mark[data-s="' + opt.pos + '"]');
+      if (mk) { mk.classList.add('hit'); mk.scrollIntoView({ block: 'center' }); setTimeout(function () { mk.classList.remove('hit'); }, 1600); }
+    }
+  }
+  function paint() {
+    var ta = $('ta'), bd = $('bd'); if (!ta) return;
+    var text = ta.value, h = '', i = 0;
+    ranges = allRanges(text, cur.kind === 'vault' ? cur.id : null);
+    ranges.forEach(function (r) {
+      var cls = r.r ? 'r' : 't-' + vault(r.id).type;
+      h += esc(text.slice(i, r.s)) + '<mark class="' + cls + '" data-s="' + r.s + '">' + esc(text.slice(r.s, r.e)) + '</mark>'; i = r.e;
+    });
+    h += esc(text.slice(i)); if (text.slice(-1) === '\n' || !text) h += ' ';
+    bd.innerHTML = h; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+  }
+  function renderMentions() {
+    var box = $('mentions'); if (!box) return; box.innerHTML = ''; var found = 0;
+    S.notes.map(function (n) { return { kind: 'note', d: n }; }).concat(S.vault.filter(function (v) { return v.id !== cur.id; }).map(function (v) { return { kind: 'vault', d: v }; }))
+      .forEach(function (x) {
+        findLinks(x.d.text, x.kind === 'vault' ? x.d.id : null).filter(function (r) { return r.id === cur.id; }).forEach(function (r) {
+          found++; var t = x.d.text, a = Math.max(0, r.s - 50), z = Math.min(t.length, r.e + 50);
+          var b = document.createElement('button'); b.className = 'mention';
+          b.innerHTML = '<span class="meta">' + (x.kind === 'note' ? 'Note' : TYPES[x.d.type]) + ' · ' + esc(x.kind === 'note' ? noteTitle(x.d) : x.d.title) + '</span>' +
+            '<span>' + (a ? '…' : '') + esc(t.slice(a, r.s)) + '<em>' + esc(t.slice(r.s, r.e)) + '</em>' + esc(t.slice(r.e, z)) + (z < t.length ? '…' : '') + '</span>';
+          b.onclick = function () { go({ view: 'doc', kind: x.kind, id: x.d.id, pos: r.s }); }; box.appendChild(b);
+        });
+      });
+    if (!found) box.innerHTML = '<p class="hint">Not in your notes yet. Once you write or say this name in a note, it shows up here.</p>';
+  }
+  function checkPill() {
+    var ta = $('ta'), p = $('pill'); if (!ta) return;
+    if (ta.selectionStart !== ta.selectionEnd) { p.hidden = true; return; }
+    var pos = ta.selectionStart, r = null;
+    for (var i = 0; i < ranges.length; i++) if (pos >= ranges[i].s && pos <= ranges[i].e) { r = ranges[i]; break; }
+    if (!r) { p.hidden = true; return; }
+    if (r.r) {
+      p.className = ''; p.innerHTML = '<span>📖 Go to ' + esc(refStr(r.r)) + ' ›</span>'; p.hidden = false;
+      p.onclick = function () { p.hidden = true; go({ view: 'read', b: r.r.b, c: r.r.c, v: r.r.v }); };
+    } else {
+      var v = vault(r.id); p.className = 't-' + v.type; p.innerHTML = '<span class="dot"></span><span>Open ' + esc(v.title) + ' ›</span>'; p.hidden = false;
+      p.onclick = function () { p.hidden = true; go({ view: 'doc', kind: 'vault', id: v.id }); };
+    }
+  }
+  var WORD = /[\p{L}\p{N}'’\-]/u;
+  function linkWord() {
+    var ta = $('ta'); if (!ta) return; var s = ta.selectionStart, e = ta.selectionEnd, t = ta.value;
+    for (var i = 0; i < ranges.length; i++) if (s >= ranges[i].s && s <= ranges[i].e && e <= ranges[i].e) {
+      var r = ranges[i]; return r.r ? go({ view: 'read', b: r.r.b, c: r.r.c, v: r.r.v }) : go({ view: 'doc', kind: 'vault', id: r.id });
+    }
+    if (s === e) { while (s > 0 && WORD.test(t[s - 1])) s--; while (e < t.length && WORD.test(t[e])) e++; }
+    var w = t.slice(s, e).replace(/^[\s'’\-]+|[\s'’\-.,;:!?]+$/g, '').replace(/\s+/g, ' ');
+    if (w.length < 2) { toast('Put the cursor on a word first, or select a few words'); return; }
+    linkTerm(w);
+  }
+  ['prevW', 'linkBtn', 'nextW', 'refBtn'].forEach(function (id) { $(id).addEventListener('pointerdown', function (e) { e.preventDefault(); }); });
+  $('linkBtn').onclick = linkWord;
+  function moveWord(dir) {
+    var ta = $('ta'); if (!ta) return; var t = ta.value, p = ta.selectionStart;
+    if (dir < 0) { while (p > 0 && !WORD.test(t[p - 1])) p--; while (p > 0 && WORD.test(t[p - 1])) p--; }
+    else { while (p < t.length && WORD.test(t[p])) p++; while (p < t.length && !WORD.test(t[p])) p++; }
+    ta.setSelectionRange(p, p); checkPill();
+  }
+  $('prevW').onclick = function () { moveWord(-1); }; $('nextW').onclick = function () { moveWord(1); };
+  $('refBtn').onclick = function () {
+    var ta = $('ta'); if (!ta) return; var s = ta.selectionStart, pre = s > 0 && !/\s/.test(ta.value[s - 1]) ? ' ' : '';
+    ta.setRangeText(pre + refStr(S.pos) + ' ', s, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input'));
+  };
+
+  // ── Sheets: menu, backup, delete ──
+  function sheet(html) { $('sheetCard').innerHTML = html; $('sheet').hidden = false; $('sheetCard').scrollTop = 0; }
+  function closeSheet() { $('sheet').hidden = true; }
+  $('sheet').onclick = function (e) { if (e.target === this) closeSheet(); };
+  function copy(txt, msg) {
+    var done = function () { closeSheet(); toast(msg || 'Copied'); };
+    try { navigator.clipboard.writeText(txt).then(done, function () { showCopy(txt); }); } catch (e) { showCopy(txt); }
+  }
+  function showCopy(txt) {
+    sheet('<h2>Copy</h2><p>Press and hold the text, choose Select all, then Copy.</p><textarea id="cTxt" readonly aria-label="Text to copy">' + esc(txt) + '</textarea><button class="sbtn" id="cClose">Done</button>');
+    $('cTxt').focus(); $('cTxt').select(); $('cClose').onclick = closeSheet;
+  }
+  function applySize() { document.documentElement.style.setProperty('--rs', (S.size || 19) + 'px'); }
+  function openMenu() {
+    var hasEx = S.notes.concat(S.vault).some(function (d) { return d.ex; });
+    sheet('<h2>Scripture Vault</h2><p>Your notes are saved on this phone. Copy a backup now and then and keep it somewhere safe.</p>' +
+      '<div class="chapnav"><button id="mSm">A− Smaller text</button><button id="mLg">A+ Larger text</button></div>' +
+      '<button class="sbtn primary" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
+      (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
+      '<p style="font-size:14px">Bible text: King James Version (1769) and World English Bible, both public domain.</p><button class="sbtn" id="mClose">Close</button>');
+    $('mClose').onclick = closeSheet;
+    $('mSm').onclick = function () { S.size = Math.max(14, (S.size || 19) - 1); applySize(); save(); };
+    $('mLg').onclick = function () { S.size = Math.min(30, (S.size || 19) + 1); applySize(); save(); };
+    $('mCopy').onclick = function () { copy(JSON.stringify({ app: 'scripture-vault', notes: S.notes, vault: S.vault }), 'Backup copied. Paste it into an email to yourself.'); };
+    $('mRestore').onclick = function () {
+      sheet('<h2>Restore</h2><p>Paste a backup below. This replaces the notes on this phone now.</p><textarea id="rTxt" aria-label="Backup text"></textarea><button class="sbtn primary" id="rGo">Replace with this backup</button><button class="sbtn" id="rNo">Cancel</button>');
+      $('rNo').onclick = closeSheet;
+      $('rGo').onclick = function () {
+        try { var s = JSON.parse($('rTxt').value); if (!s.notes || !s.vault) throw 0; S.notes = s.notes; S.vault = s.vault; buildMap(); save(); closeSheet(); stack = []; show({ view: 'read', b: S.pos.b, c: S.pos.c }); toast('Backup restored'); }
+        catch (e) { toast('That text is not a Scripture Vault backup. Copy it again and paste the whole thing.'); }
+      };
+    };
+    if ($('mEx')) $('mEx').onclick = function () { S.notes = S.notes.filter(function (d) { return !d.ex; }); S.vault = S.vault.filter(function (d) { return !d.ex; }); buildMap(); save(); closeSheet(); stack = []; show(state()); toast('Examples removed'); };
+  }
+  function openDocMenu() {
+    var isV = cur.kind === 'vault', d = docOf(cur);
+    sheet('<h2>' + esc(isV ? d.title : noteTitle(d)) + '</h2><button class="sbtn" id="dCopy">Copy text</button><button class="sbtn danger" id="dDel">Delete this ' + (isV ? 'vault page' : 'note') + '</button><button class="sbtn" id="dClose">Close</button>');
+    $('dClose').onclick = closeSheet;
+    $('dCopy').onclick = function () { copy((isV ? d.title : noteTitle(d)) + '\n\n' + (d.text || '')); };
+    $('dDel').onclick = function () {
+      sheet('<h2>Delete?</h2><p>' + (isV ? 'The name stops linking. Your notes stay as they are.' : 'This note will be gone from this phone.') + '</p><button class="sbtn danger" id="yDel">Yes, delete</button><button class="sbtn" id="nDel">Keep it</button>');
+      $('nDel').onclick = closeSheet;
+      $('yDel').onclick = function () {
+        if (isV) S.vault = S.vault.filter(function (v) { return v.id !== d.id; }); else S.notes = S.notes.filter(function (n) { return n.id !== d.id; });
+        stack = stack.filter(function (x) { return x.id !== d.id; }); buildMap(); save(); closeSheet(); back() || renderRead(); toast('Deleted');
+      };
+    };
+  }
+
+  // Phone back button (Android app): close a sheet, or go back. Returns true if handled.
+  window.fvBack = function () { if (!$('sheet').hidden) { closeSheet(); return true; } return back(); };
+  window.addEventListener('resize', function () { if (view === 'doc') paint(); });
+
+  // Save both Bibles on the phone for offline reading (quietly, once)
+  function prefetch() {
+    try { if (localStorage.getItem('sv.saved') === '2') return; } catch (e) {}
+    var vs = ['kjv', 'web'], k = 0;
+    (function nextVer() {
+      if (k >= vs.length) { try { localStorage.setItem('sv.saved', '2'); } catch (e) {} return; }
+      var ver = vs[k++], b = 0;
+      (function nextBook() { if (++b > 66) return nextVer(); fetch('data/' + ver + '/' + b + '.json').then(function () { setTimeout(nextBook, 60); }, function () {}); })();
+    })();
+  }
+
+  S = load(); S.pos = S.pos || { b: 43, c: 3, v: 16 }; S.ver = S.ver || 'kjv'; applySize();
+  buildRefs(); buildMap(); renderRead(S.pos.v);
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname !== 'appassets.androidplatform.net') {
+    navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { setTimeout(prefetch, 2500); }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
