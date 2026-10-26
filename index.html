@@ -409,11 +409,11 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
     var h = '<h2>' + esc(refStr(r)) + ' <span class="meta" style="display:inline">' + S.ver.toUpperCase() + '</span></h2><div class="vtext">' + esc(text) + '</div>' +
       '<button class="sbtn primary" id="vNote">✎ Write a note on this verse</button>';
     ns.forEach(function (n) { h += '<button class="sbtn" data-n="' + n.id + '">Open note: ' + esc(noteTitle(n)) + '</button>'; });
-    h += '<span class="lbl">Original Hebrew and Greek words (Strong’s)</span><div class="rows" id="vStrong">' +
-      (S.ver === 'kjv' ? '<p class="loading">Looking up the original words…</p>' : '<button class="sbtn" id="vToKjv">Show this verse in the KJV to see the original words</button>') + '</div>';
-    h += '<span class="lbl">Link a name or idea: tap a word (tap a second word to link a phrase)</span><div class="words" id="words">' +
+    h += '<span class="lbl">🔗 Link to your vault: tap a word (tap a second word to link a phrase)</span><div class="words" id="words">' +
       words.map(function (w, i) { return '<button data-i="' + i + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
-      '<button class="sbtn primary" id="vLink" hidden></button><button class="sbtn" id="vCopy">Copy verse</button>';
+      '<button class="sbtn primary" id="vLink" hidden></button>' +
+      (S.ver === 'kjv' ? '<button class="sbtn" id="vShowStrong">📜 Show the original Hebrew and Greek words</button>' : '<button class="sbtn" id="vToKjv">📜 See the original Hebrew and Greek words (opens this verse in the KJV)</button>') +
+      '<div class="rows" id="vStrong" hidden></div><button class="sbtn" id="vCopy">Copy verse</button>';
     sheet(h);
     $('vNote').onclick = function () {
       if (!canAddNote()) return;
@@ -434,15 +434,22 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
       };
     });
     $('vCopy').onclick = function () { copy(text + ' (' + refStr(r) + ', ' + S.ver.toUpperCase() + ')'); };
-    if (S.ver === 'kjv') Promise.all([tagsFor(b), glossAll()]).then(function (res) {
-      var box = $('vStrong'); if (!box) return;
+    if (S.ver === 'kjv') $('vShowStrong').onclick = function () {
+      var box = $('vStrong'), btn = $('vShowStrong');
+      if (!box.hidden) { box.hidden = true; btn.textContent = '📜 Show the original Hebrew and Greek words'; return; }
+      box.hidden = false; btn.textContent = '📜 Hide the original words';
+      if (box.firstChild) return;
+      box.innerHTML = '<p class="loading">Looking up the original words…</p>';
+      Promise.all([tagsFor(b), glossAll()]).then(function (res) {
+      if (!box.isConnected) return;
       var groups = [], at = {};
       parseTags((res[0].c[c - 1] || [])[v - 1]).forEach(function (x) {
         x.n.forEach(function (n) { var w = text.slice(x.s, x.e); if (at[n] != null) { if (groups[at[n]].en.indexOf(w) < 0) groups[at[n]].en.push(w); } else { at[n] = groups.length; groups.push({ n: n, en: [w] }); } });
       });
       box.innerHTML = groups.length ? groups.map(function (g) { return strongRow(g.en.join(' … '), g.n, res[1][g.n]); }).join('') : '<p class="hint">No Strong’s numbers for this verse.</p>';
       wireNums(box);
-    }).catch(function () { var box = $('vStrong'); if (box) box.innerHTML = '<p class="hint">Could not load the original words.</p>'; });
+      }).catch(function () { box.innerHTML = '<p class="hint">Could not load the original words.</p>'; });
+    };
     else $('vToKjv').onclick = function () {
       S.ver = 'kjv'; save(); closeSheet();
       loadBook('kjv', b).then(function (d) { renderRead(v); verseSheet(v, (d.c[c - 1] || [])[v - 1] || ''); });
@@ -659,6 +666,13 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
     more.onclick = page; page();
     return { times: occ.length, verses: order.length };
   }
+  function addStrongVault(n, e, ve) {
+    if (ve) return go({ view: 'doc', kind: 'vault', id: ve.id });
+    if (!canAddVault()) return;
+    var t = e.x || n, pl = plain(t);
+    var v = { id: uid(), type: 'theme', title: t, aliases: pl && pl !== t.toLowerCase() ? [pl] : [], strong: n, text: '', updated: Date.now() };
+    S.vault.push(v); buildMap(); save(); toast('Added “' + t + '” to the vault'); go({ view: 'doc', kind: 'vault', id: v.id });
+  }
   function renderStrong(n) {
     view = 'strong'; cur = { n: n }; setTab('search'); bars(false);
     subHeader('Strong’s ' + n, n[0] === 'G' ? 'Greek word' : 'Hebrew word');
@@ -672,8 +686,10 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
         m.innerHTML = '<div class="wrap"><div class="card2"><span class="lbl">' + (n[0] === 'G' ? 'Greek · New Testament' : 'Hebrew · Old Testament') + '</span>' +
           '<p class="lemma" dir="auto">' + esc(e.l) + '</p><div class="xlit">' + esc(e.x) + '</div>' + (e.p ? '<div class="meta">Say it: ' + esc(e.p) + '</div>' : '') + '</div>' +
           '<div class="lockbox"><p>Strong’s full definition, how the KJV translates it, and all ' + Object.keys(nv).length.toLocaleString() + ' verses that use this word are part of the Unlock.</p>' +
-          '<button class="newbtn" id="sUnlock">Unlock · $4.99, yours to keep</button></div></div>';
+          '<button class="newbtn" id="sUnlock">Unlock · $4.99, yours to keep</button></div>' +
+          '<button class="sbtn primary" id="sVault">' + (ve ? '◆ Open its vault page' : '◆ Add “' + esc(e.x || n) + '” to your vault') + '</button></div>';
         $('sUnlock').onclick = function () { upsell(''); };
+        $('sVault').onclick = function () { addStrongVault(n, e, ve); };
         return;
       }
       m.innerHTML = '<div class="wrap"><div class="card2"><span class="lbl">' + (n[0] === 'G' ? 'Greek · New Testament' : 'Hebrew · Old Testament') + '</span>' +
@@ -683,12 +699,7 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
         '<button class="newbtn" id="sVault">' + (ve ? '◆ Open its vault page' : '◆ Add to vault') + '</button>' +
         '<span class="lbl" id="occLbl"></span><div id="occ"></div></div>';
       wireNums(m);
-      $('sVault').onclick = function () {
-        if (ve) return go({ view: 'doc', kind: 'vault', id: ve.id });
-        var t = e.x || n, pl = plain(t);
-        var v = { id: uid(), type: 'theme', title: t, aliases: pl && pl !== t.toLowerCase() ? [pl] : [], strong: n, text: '', updated: Date.now() };
-        S.vault.push(v); buildMap(); save(); toast('Added “' + t + '” to the vault'); go({ view: 'doc', kind: 'vault', id: v.id });
-      };
+      $('sVault').onclick = function () { addStrongVault(n, e, ve); };
       var c = listOcc(e, $('occ'));
       $('occLbl').textContent = 'Used ' + c.times.toLocaleString() + ' time' + (c.times === 1 ? '' : 's') + ' in ' + c.verses.toLocaleString() + ' verse' + (c.verses === 1 ? '' : 's') + ' of the KJV';
     }).catch(function () { m.innerHTML = '<div class="wrap"><p class="empty">Could not open the Strong’s entry. Connect once so it can save for offline use.</p></div>'; });
