@@ -1,5 +1,5 @@
 // Scripture Vault offline cache. Bump VERSION when the app page changes.
-var VERSION = 'sv-5', DATA = 'sv-bible-1';
+var VERSION = 'sv-6', DATA = 'sv-bible-2';
 var CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));

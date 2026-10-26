@@ -13,7 +13,7 @@
 /* Layout: one column, phone-first. Reader is home; bottom tabs switch Read / Notes / Vault / Search; a page editor with a thumb toolbar. */
 :root {
   padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
-  --bg: #f4f5f9; --surface: #ffffff; --ink: #1d2238; --muted: #5e6480; --line: #d6d9e6;
+  --bg: #f4f5f9; --surface: #ffffff; --ink: #1d2238; --muted: #434966; --line: #d6d9e6;
   --accent: #c9952b; --accent-ink: #1d1708; --chrome: #1d2238; --chrome-ink: #f4f5f9;
   --person: #b4532a; --place: #1f7a5a; --theme: #3557c4; --idea: #8a3fb8;
   --serif: "Noto Serif", Georgia, "Times New Roman", serif;
@@ -22,11 +22,11 @@
   --mix: 20%; --rs: 19px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #12141d; --surface: #1b1e2b; --ink: #e8eaf3; --muted: #9aa0bb; --line: #2c3044;
+  --bg: #12141d; --surface: #1b1e2b; --ink: #f1f3fa; --muted: #c6cbe0; --line: #2c3044;
   --accent: #e0b04a; --accent-ink: #1d1708; --chrome: #0c0e15; --chrome-ink: #e8eaf3;
   --person: #ff9466; --place: #55d1a2; --theme: #8fa8ff; --idea: #d29bff; --mix: 26%; color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #12141d; --surface: #1b1e2b; --ink: #e8eaf3; --muted: #9aa0bb; --line: #2c3044;
+  --bg: #12141d; --surface: #1b1e2b; --ink: #f1f3fa; --muted: #c6cbe0; --line: #2c3044;
   --accent: #e0b04a; --accent-ink: #1d1708; --chrome: #0c0e15; --chrome-ink: #e8eaf3;
   --person: #ff9466; --place: #55d1a2; --theme: #8fa8ff; --idea: #d29bff; --mix: 26%; color-scheme: dark }
 
@@ -144,6 +144,23 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
 .sbtn { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 14px; font-weight: 700; text-align: left; }
 .sbtn.primary { background: var(--accent); color: var(--accent-ink); border: 0; }
 .sbtn.danger { color: var(--person); }
+.seg.four { grid-template-columns: repeat(4, 1fr); }
+.seg.four button { font-size: 15px; padding: 10px 2px; letter-spacing: .02em; }
+.letters { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.letters button { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 0; font-weight: 700; font-size: 16px; }
+.letters button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.wrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 12px 14px; width: 100%; min-width: 0; font-family: var(--serif); font-size: 18px; }
+.wrow span { font-family: var(--label); font-weight: 700; font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+.srow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; width: 100%; min-width: 0; }
+.srow .en { font-family: var(--serif); font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.srow .num { font-family: var(--label); font-weight: 700; font-size: 15px; color: var(--accent-ink); background: var(--accent); border-radius: 6px; padding: 1px 8px; align-self: center; }
+.srow .gl { grid-column: 1 / -1; color: var(--ink); font-size: 15px; overflow-wrap: anywhere; }
+.srow .gl i { font-style: normal; font-family: var(--serif); font-size: 18px; unicode-bidi: isolate; }
+.card2 { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; }
+.lemma { font-family: var(--serif); font-size: 44px; line-height: 1.25; margin: 0; unicode-bidi: isolate; overflow-wrap: anywhere; }
+.xlit { font-family: var(--serif); font-size: 22px; font-style: italic; }
+.sdef { font-family: var(--serif); font-size: 18px; line-height: 1.6; margin: 0; overflow-wrap: anywhere; }
+.sref { border: 0; background: color-mix(in srgb, var(--theme) 22%, transparent); color: var(--ink); border-radius: 5px; padding: 0 5px; font: inherit; font-weight: 700; }
 .themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .themes button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 12px 4px; font-weight: 700; }
 .themes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -292,6 +309,8 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   function state() {
     if (view === 'doc') { var ta = $('ta'); return { view: 'doc', kind: cur.kind, id: cur.id, pos: ta ? ta.selectionStart : 0 }; }
     if (view === 'read') return { view: 'read', b: S.pos.b, c: S.pos.c, v: S.pos.v, y: window.scrollY };
+    if (view === 'strong') return { view: 'strong', n: cur.n };
+    if (view === 'word') return { view: 'word', w: cur.w };
     return { view: view };
   }
   function show(st) {
@@ -301,6 +320,8 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     if (st.view === 'notes') return renderNotes();
     if (st.view === 'vault') return renderVault();
     if (st.view === 'search') return renderSearch();
+    if (st.view === 'strong') return renderStrong(st.n);
+    if (st.view === 'word') return renderWord(st.w);
   }
   function go(st) { stack.push(state()); show(st); }
   function back() { var p = stack.pop(); if (p) { show(p); return true; } if (view !== 'read') { setTab('read'); show({ view: 'read', b: S.pos.b, c: S.pos.c, v: S.pos.v }); return true; } return false; }
@@ -321,8 +342,9 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       [].forEach.call(document.querySelectorAll('[data-ver]'), function (b) { b.onclick = function () { S.ver = b.getAttribute('data-ver'); save(); closeSheet(); after(); prefetch(); }; });
     };
   }
-  function linkText(t) {
+  function linkText(t, extra) {
     var r = findLinks(t), h = '', i = 0;
+    if (extra && extra.length) r = r.concat(extra.filter(function (x) { return !r.some(function (y) { return x.s < y.e && x.e > y.s; }); })).sort(function (a, b) { return a.s - b.s; });
     r.forEach(function (x) { var v = vault(x.id); h += esc(t.slice(i, x.s)) + '<span class="lk t-' + v.type + '" data-id="' + x.id + '">' + esc(t.slice(x.s, x.e)) + '</span>'; i = x.e; });
     return h + esc(t.slice(i));
   }
@@ -332,15 +354,19 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     header('<button id="placeBtn">' + esc(BOOKS[b - 1][0]) + ' ' + c + ' <span>▾</span></button>' + verHtml() + '<button class="iconbtn" id="menuBtn" aria-label="Menu">⋯</button>');
     $('placeBtn').onclick = openPicker; $('menuBtn').onclick = openMenu; wireVer(function () { renderRead(S.pos.v); });
     var m = $('main'); m.innerHTML = '<div class="wrap"><div class="loading">Opening ' + esc(BOOKS[b - 1][0]) + ' ' + c + '…</div></div>';
-    loadBook(S.ver, b).then(function (d) {
+    var smap = {}, sv = false;
+    if (S.ver === 'kjv') S.vault.forEach(function (x) { if (x.strong) { smap[x.strong] = x.id; sv = true; } });
+    Promise.all([loadBook(S.ver, b), sv ? tagsFor(b).catch(function () { return null; }) : null]).then(function (res) {
+      var d = res[0], tg = res[1];
       if (view !== 'read' || S.pos.b !== b || S.pos.c !== c) return;
       var vs = d.c[c - 1] || [], h = '<div class="wrap"><div class="chap"><div class="vername">' + VERS[S.ver] + '</div><h1>' + esc(d.n) + ' ' + c + '</h1>';
       vs.forEach(function (t, i) {
         var n = notesFor(b, c, i + 1).length;
-        h += '<p class="vs" data-v="' + (i + 1) + '"><sup>' + (i + 1) + '</sup>' + linkText(t) + (n ? '<span class="nb">✎' + (n > 1 ? n : '') + '</span>' : '') + '</p>';
+        var ex = tg ? parseTags((tg.c[c - 1] || [])[i]).filter(function (x) { return x.n.some(function (n) { return smap[n]; }); }).map(function (x) { var n = x.n.filter(function (k) { return smap[k]; })[0]; return { s: x.s, e: x.e, id: smap[n] }; }) : null;
+        h += '<p class="vs" data-v="' + (i + 1) + '"><sup>' + (i + 1) + '</sup>' + linkText(t, ex) + (n ? '<span class="nb">✎' + (n > 1 ? n : '') + '</span>' : '') + '</p>';
       });
       h += '</div><div class="chapnav"><button id="prevC">‹ Previous</button><button id="nextC">Next ›</button></div>' +
-        '<p class="hint">Tap a verse to write a note or link a name. Tap a colored word to open its vault page.</p></div>';
+        '<p class="hint">Tap a verse to write a note, link a name, or see the original Hebrew and Greek words (KJV). Tap a colored word to open its vault page.</p></div>';
       m.innerHTML = h;
       $('prevC').onclick = function () { step(-1); }; $('nextC').onclick = function () { step(1); };
       m.querySelector('.chap').onclick = function (e) {
@@ -379,6 +405,8 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     var h = '<h2>' + esc(refStr(r)) + ' <span class="meta" style="display:inline">' + S.ver.toUpperCase() + '</span></h2><div class="vtext">' + esc(text) + '</div>' +
       '<button class="sbtn primary" id="vNote">✎ Write a note on this verse</button>';
     ns.forEach(function (n) { h += '<button class="sbtn" data-n="' + n.id + '">Open note: ' + esc(noteTitle(n)) + '</button>'; });
+    h += '<span class="lbl">Original Hebrew and Greek words (Strong’s)</span><div class="rows" id="vStrong">' +
+      (S.ver === 'kjv' ? '<p class="loading">Looking up the original words…</p>' : '<button class="sbtn" id="vToKjv">Show this verse in the KJV to see the original words</button>') + '</div>';
     h += '<span class="lbl">Link a name or idea: tap a word (tap a second word to link a phrase)</span><div class="words" id="words">' +
       words.map(function (w, i) { return '<button data-i="' + i + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
       '<button class="sbtn primary" id="vLink" hidden></button><button class="sbtn" id="vCopy">Copy verse</button>';
@@ -401,6 +429,19 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       };
     });
     $('vCopy').onclick = function () { copy(text + ' (' + refStr(r) + ', ' + S.ver.toUpperCase() + ')'); };
+    if (S.ver === 'kjv') Promise.all([tagsFor(b), glossAll()]).then(function (res) {
+      var box = $('vStrong'); if (!box) return;
+      var groups = [], at = {};
+      parseTags((res[0].c[c - 1] || [])[v - 1]).forEach(function (x) {
+        x.n.forEach(function (n) { var w = text.slice(x.s, x.e); if (at[n] != null) { if (groups[at[n]].en.indexOf(w) < 0) groups[at[n]].en.push(w); } else { at[n] = groups.length; groups.push({ n: n, en: [w] }); } });
+      });
+      box.innerHTML = groups.length ? groups.map(function (g) { return strongRow(g.en.join(' … '), g.n, res[1][g.n]); }).join('') : '<p class="hint">No Strong’s numbers for this verse.</p>';
+      wireNums(box);
+    }).catch(function () { var box = $('vStrong'); if (box) box.innerHTML = '<p class="hint">Could not load the original words.</p>'; });
+    else $('vToKjv').onclick = function () {
+      S.ver = 'kjv'; save(); closeSheet();
+      loadBook('kjv', b).then(function (d) { renderRead(v); verseSheet(v, (d.c[c - 1] || [])[v - 1] || ''); });
+    };
   }
   function linkTerm(w) {
     var id = lookup[w.toLowerCase()];
@@ -467,12 +508,23 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     view = 'search'; cur = null; setTab('search'); bars(false);
     header('<div class="brand"><small>Scripture Vault</small>Search</div>' + verHtml());
     wireVer(function () { renderSearch(); });
-    $('main').innerHTML = '<div class="wrap"><div class="seg"><button id="sB" class="' + (sMode === 'bible' ? 'on' : '') + '">Bible</button><button id="sN" class="' + (sMode === 'notes' ? 'on' : '') + '">My notes</button></div>' +
-      '<form id="sf"><input id="sq" class="search" type="search" enterkeyhint="search" placeholder="' + (sMode === 'bible' ? 'A word or phrase, e.g. living water' : 'Search notes and vault') + '" value="' + esc(sQuery) + '" aria-label="Search"></form>' +
-      '<div class="rows" id="rows"></div></div>';
-    $('sB').onclick = function () { sMode = 'bible'; renderSearch(); }; $('sN').onclick = function () { sMode = 'notes'; renderSearch(); };
-    $('sf').onsubmit = function (e) { e.preventDefault(); sQuery = $('sq').value; $('sq').blur(); run(); };
+    var MODES = [['bible', 'Bible'], ['words', 'Words'], ['strong', 'Strong’s'], ['notes', 'Notes']];
+    var PH = { bible: 'A word or phrase, e.g. living water', words: 'Start typing a word, or pick a letter', strong: 'G25, H430, or a word like mercy', notes: 'Search notes and vault' };
+    var val = sMode === 'words' ? wFilter : sMode === 'strong' ? stQuery : sQuery;
+    $('main').innerHTML = '<div class="wrap"><div class="seg four">' + MODES.map(function (o) { return '<button data-mode="' + o[0] + '" class="' + (sMode === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      '<form id="sf"><input id="sq" class="search" type="search" enterkeyhint="search" autocapitalize="off" placeholder="' + PH[sMode] + '" value="' + esc(val) + '" aria-label="Search"></form>' +
+      '<div id="panel"></div><div class="rows" id="rows"></div></div>';
+    [].forEach.call(document.querySelectorAll('[data-mode]'), function (b) { b.onclick = function () { sMode = b.getAttribute('data-mode'); renderSearch(); }; });
+    $('sf').onsubmit = function (e) {
+      e.preventDefault(); var q = $('sq').value.trim(); $('sq').blur();
+      if (sMode === 'bible') { sQuery = q; run(); }
+      else if (sMode === 'words') { wFilter = q; if (q) go({ view: 'word', w: q }); }
+      else if (sMode === 'strong') { stQuery = q; if (isNum(q)) go({ view: 'strong', n: normNum(q) }); else strongPanel($('rows'), q); }
+      else { sQuery = q; run(); }
+    };
     if (sMode === 'notes') $('sq').oninput = function () { sQuery = this.value; run(); };
+    if (sMode === 'words') { $('sq').oninput = function () { wFilter = this.value.trim(); wordsPanel($('panel')); }; wordsPanel($('panel')); }
+    if (sMode === 'strong') { $('sq').oninput = function () { stQuery = this.value.trim(); if (!stQuery) strongPanel($('rows'), ''); }; strongPanel($('rows'), isNum(stQuery) ? '' : stQuery); }
     function run() {
       var q = sQuery.trim(), box = $('rows'); if (!q) { box.innerHTML = ''; return; }
       if (sMode === 'notes') {
@@ -486,8 +538,150 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       var re = new RegExp('(?<![\\p{L}\\p{N}])' + escRe(q).replace(/\s+/g, '\\s+') + '(?![\\p{L}\\p{N}])', 'giu');
       bibleSearch(re, box, 300);
     }
-    if (sQuery) run();
+    if ((sMode === 'bible' || sMode === 'notes') && sQuery) run();
   }
+
+  // ── Concordance: word lists and Strong's ──
+  // Strong's is meant for the paid Unlock; it is open to everyone until the Unlock is built.
+  var wLetter = 'A', wFilter = '', stQuery = '', VREF = null;
+  function getJSON(u) {
+    if (cache[u]) return Promise.resolve(cache[u]);
+    return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) { cache[u] = d; return d; });
+  }
+  function strongEntry(n) { var k = +n.slice(1); return getJSON('data/sd/' + n[0] + Math.floor(k / 100) + '.json').then(function (ch) { return ch[String(k)] || null; }); }
+  function glossAll() { return getJSON('data/sd/gloss.json'); }
+  function tagsFor(b) { return getJSON('data/sn/' + b + '.json'); }
+  function parseTags(str) { return str ? str.split(';').map(function (x) { var p = x.split(','); return { s: +p[0], e: +p[1], n: p[2].split(' ') }; }) : []; }
+  function vrefs() {
+    if (VREF) return Promise.resolve(VREF);
+    return getJSON('data/sd/vc.json').then(function (vc) { var a = [], id = 0; vc.forEach(function (chs, bi) { chs.forEach(function (n, ci) { a.push([bi + 1, ci + 1, id]); id += n; }); }); VREF = a; return a; });
+  }
+  function refOfVid(id) { var lo = 0, hi = VREF.length - 1; while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (VREF[mid][2] <= id) lo = mid; else hi = mid - 1; } var x = VREF[lo]; return { b: x[0], c: x[1], v: id - x[2] + 1 }; }
+  function isNum(q) { return /^\s*[GHgh]\s*\d{1,4}\s*$/.test(q || ''); }
+  function normNum(q) { q = q.replace(/\s+/g, '').toUpperCase(); return q[0] + (+q.slice(1)); }
+  function plain(t) { return t.normalize('NFD').replace(/[̀-ͯᵉʼʻʾʿ]/g, '').toLowerCase(); }
+  function linkNums(t) { return esc(t).replace(/\b([GH])(\d{1,4})\b/g, '<button class="sref" data-sn="$1$2">$1$2</button>'); }
+  function wireNums(root) { if (!root) return; [].forEach.call(root.querySelectorAll('[data-sn]'), function (x) { x.onclick = function (e) { e.stopPropagation(); go({ view: 'strong', n: x.getAttribute('data-sn') }); }; }); }
+  function strongRow(en, n, g, extra) {
+    return '<button class="srow" data-sn="' + n + '"><span class="en">' + esc(en) + '</span><span class="num">' + n + '</span>' +
+      '<span class="gl"><i dir="auto">' + esc(g ? g[0] : '') + '</i> ' + esc(g ? g[1] : '') + (g && g[2] ? ' · ' + esc(g[2]) : '') + (extra ? ' · ' + esc(extra) : '') + '</span></button>';
+  }
+  function subHeader(title, small) {
+    header('<button class="iconbtn" id="backBtn" aria-label="Back">←</button><div class="brand"><small>' + esc(small) + '</small>' + esc(title) + '</div>');
+    $('backBtn').onclick = back;
+  }
+  // Every verse a Strong's number appears in, 50 at a time, with the English word highlighted
+  function listOcc(e, box) {
+    var occ = e.o ? e.o.split(',') : [], byV = {}, order = [];
+    occ.forEach(function (o) { var p = o.split('.'), id = parseInt(p[0], 36); if (!byV[id]) { byV[id] = []; order.push(id); } byV[id].push([parseInt(p[1], 36), parseInt(p[2], 36)]); });
+    box.innerHTML = '';
+    var list = document.createElement('div'); list.className = 'rows'; box.appendChild(list);
+    var more = document.createElement('button'); more.className = 'findbtn'; more.textContent = 'Show more verses'; more.hidden = true; box.appendChild(more);
+    var shown = 0;
+    function page() {
+      var ids = order.slice(shown, shown + 50); shown += ids.length; more.hidden = true;
+      var refs = ids.map(refOfVid), books = {};
+      refs.forEach(function (r) { books[r.b] = 1; });
+      Promise.all(Object.keys(books).map(function (b) { return loadBook('kjv', +b); })).then(function () {
+        refs.forEach(function (r, i) {
+          var t = (cache['kjv' + r.b].c[r.c - 1] || [])[r.v - 1] || '', h = '', p = 0;
+          byV[ids[i]].slice().sort(function (a, b) { return a[0] - b[0]; }).forEach(function (x) { if (x[0] < p) return; h += esc(t.slice(p, x[0])) + '<em>' + esc(t.slice(x[0], x[1])) + '</em>'; p = x[1]; });
+          h += esc(t.slice(p));
+          var row = document.createElement('button'); row.className = 'row';
+          row.innerHTML = '<span class="meta"><span class="ref">' + esc(refStr(r)) + '</span><span>KJV</span></span><span class="scr">' + h + '</span>';
+          row.onclick = function () { go({ view: 'read', b: r.b, c: r.c, v: r.v }); }; list.appendChild(row);
+        });
+        more.hidden = shown >= order.length;
+      }).catch(function () { more.hidden = false; });
+    }
+    more.onclick = page; page();
+    return { times: occ.length, verses: order.length };
+  }
+  function renderStrong(n) {
+    view = 'strong'; cur = { n: n }; setTab('search'); bars(false);
+    subHeader('Strong’s ' + n, n[0] === 'G' ? 'Greek word' : 'Hebrew word');
+    var m = $('main'); m.innerHTML = '<div class="wrap"><p class="loading">Opening ' + esc(n) + '…</p></div>'; window.scrollTo(0, 0);
+    Promise.all([strongEntry(n), vrefs()]).then(function (res) {
+      var e = res[0]; if (view !== 'strong' || cur.n !== n) return;
+      if (!e) { m.innerHTML = '<div class="wrap"><p class="empty">There is no Strong’s number ' + esc(n) + '. Greek numbers go from G1 to G5624, and Hebrew from H1 to H8674.</p></div>'; return; }
+      var ve = S.vault.filter(function (v) { return v.strong === n; })[0], def = [e.r, e.d].filter(Boolean).join(' ');
+      m.innerHTML = '<div class="wrap"><div class="card2"><span class="lbl">' + (n[0] === 'G' ? 'Greek · New Testament' : 'Hebrew · Old Testament') + '</span>' +
+        '<p class="lemma" dir="auto">' + esc(e.l) + '</p><div class="xlit">' + esc(e.x) + '</div>' + (e.p ? '<div class="meta">Say it: ' + esc(e.p) + '</div>' : '') + '</div>' +
+        (def ? '<span class="lbl">Strong’s definition</span><p class="sdef">' + linkNums(def) + '</p>' : '') +
+        (e.k ? '<span class="lbl">The KJV translates it as</span><p class="sdef">' + linkNums(e.k) + '</p>' : '') +
+        '<button class="newbtn" id="sVault">' + (ve ? '◆ Open its vault page' : '◆ Add to vault') + '</button>' +
+        '<span class="lbl" id="occLbl"></span><div id="occ"></div></div>';
+      wireNums(m);
+      $('sVault').onclick = function () {
+        if (ve) return go({ view: 'doc', kind: 'vault', id: ve.id });
+        var t = e.x || n, pl = plain(t);
+        var v = { id: uid(), type: 'theme', title: t, aliases: pl && pl !== t.toLowerCase() ? [pl] : [], strong: n, text: '', updated: Date.now() };
+        S.vault.push(v); buildMap(); save(); toast('Added “' + t + '” to the vault'); go({ view: 'doc', kind: 'vault', id: v.id });
+      };
+      var c = listOcc(e, $('occ'));
+      $('occLbl').textContent = 'Used ' + c.times.toLocaleString() + ' time' + (c.times === 1 ? '' : 's') + ' in ' + c.verses.toLocaleString() + ' verse' + (c.verses === 1 ? '' : 's') + ' of the KJV';
+    }).catch(function () { m.innerHTML = '<div class="wrap"><p class="empty">Could not open the Strong’s entry. Connect once so it can save for offline use.</p></div>'; });
+  }
+  function wordsPanel(box) {
+    var ver = S.ver;
+    if (!box.firstChild) box.innerHTML = '<p class="loading">Loading the word list…</p>';
+    getJSON('data/' + ver + '/words.json').then(function (list) {
+      if (view !== 'search' || sMode !== 'words' || S.ver !== ver) return;
+      var f = plain(wFilter || ''), items = list.filter(function (x) { var k = plain(x[0]); return f ? k.indexOf(f) === 0 : k.charAt(0).toUpperCase() === wLetter; });
+      box.innerHTML = '<div class="letters">' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(function (L) { return '<button data-l="' + L + '" class="' + (!f && L === wLetter ? 'on' : '') + '">' + L + '</button>'; }).join('') + '</div>' +
+        '<p class="meta" style="margin:12px 0 8px">' + items.length.toLocaleString() + ' word' + (items.length === 1 ? '' : 's') + (f ? ' starting with “' + esc(wFilter) + '”' : ' starting with ' + wLetter) + ' · ' + ver.toUpperCase() + '</p>' +
+        '<div class="rows" id="wlist"></div><button class="findbtn" id="wMore" hidden>Show more words</button>';
+      [].forEach.call(box.querySelectorAll('[data-l]'), function (x) { x.onclick = function () { wLetter = x.getAttribute('data-l'); wFilter = ''; $('sq').value = ''; wordsPanel(box); }; });
+      var shown = 0;
+      function page() {
+        var frag = document.createDocumentFragment();
+        items.slice(shown, shown + 200).forEach(function (x) {
+          var r = document.createElement('button'); r.className = 'wrow'; r.innerHTML = esc(x[0]) + '<span>' + x[1].toLocaleString() + '</span>';
+          r.onclick = function () { go({ view: 'word', w: x[0] }); }; frag.appendChild(r);
+        });
+        shown += 200; $('wlist').appendChild(frag); $('wMore').hidden = shown >= items.length;
+      }
+      $('wMore').onclick = page; page();
+    }).catch(function () { box.innerHTML = '<p class="empty">Could not load the word list. Connect once so it can save for offline use.</p>'; });
+  }
+  function renderWord(w) {
+    view = 'word'; cur = { w: w }; setTab('search'); bars(false);
+    subHeader(w, 'Concordance · ' + S.ver.toUpperCase()); window.scrollTo(0, 0);
+    var m = $('main'), kjv = S.ver === 'kjv';
+    m.innerHTML = '<div class="wrap"><p class="sdef" id="wCount"></p>' +
+      (kjv ? '<span class="lbl">The Hebrew and Greek words behind it (Strong’s)</span><div class="rows" id="wStrong"><p class="loading">Looking up…</p></div>'
+           : '<button class="sbtn" id="wToKjv">Switch to KJV to see the Hebrew and Greek words behind it</button>') +
+      '<span class="lbl">Every verse</span><div class="rows" id="wHits"></div></div>';
+    getJSON('data/' + S.ver + '/words.json').then(function (list) {
+      var k = plain(w), hit = list.filter(function (x) { return plain(x[0]) === k; })[0], el = $('wCount');
+      if (el) el.textContent = hit ? '“' + hit[0] + '” appears ' + hit[1].toLocaleString() + ' time' + (hit[1] === 1 ? '' : 's') + ' in the ' + VERS[S.ver] + '.' : '“' + w + '” is not in the word list for the ' + VERS[S.ver] + '.';
+    }).catch(function () {});
+    if (kjv) Promise.all([getJSON('data/sd/en.json'), glossAll()]).then(function (r) {
+      var box = $('wStrong'); if (!box) return; var arr = r[0][w.toLowerCase()] || [];
+      box.innerHTML = arr.length ? arr.map(function (x) { return strongRow(w, x[0], r[1][x[0]], x[1].toLocaleString() + (x[1] === 1 ? ' time' : ' times')); }).join('') : '<p class="hint">No Hebrew or Greek word is tagged for this English word.</p>';
+      wireNums(box);
+    }).catch(function () {});
+    else $('wToKjv').onclick = function () { S.ver = 'kjv'; save(); renderWord(w); };
+    bibleSearch(new RegExp('(?<![\\p{L}\\p{N}])' + escRe(w) + '(?![\\p{L}\\p{N}])', 'giu'), $('wHits'), 500);
+  }
+  function strongPanel(box, q) {
+    glossAll().then(function (g) {
+      if (view !== 'search' || sMode !== 'strong') return;
+      if (!q) {
+        var EX = [['G26', 'love'], ['H2617', 'mercy'], ['G5485', 'grace'], ['H7965', 'peace'], ['G4102', 'faith'], ['H430', 'God'], ['G3056', 'Word'], ['H3068', 'LORD']];
+        box.innerHTML = '<p class="hint">Strong’s numbers tie each English word in the KJV to the Hebrew or Greek word behind it. Type a number, or an English word to see which original words it translates. Try one of these:</p>' +
+          EX.map(function (x) { return strongRow(x[1], x[0], g[x[0]]); }).join('');
+        return wireNums(box);
+      }
+      getJSON('data/sd/en.json').then(function (en) {
+        var arr = en[q.toLowerCase()] || [];
+        box.innerHTML = arr.length ? '<p class="meta" style="margin:0">Original words the KJV translates as “' + esc(q) + '”</p>' + arr.map(function (x) { return strongRow(q, x[0], g[x[0]], x[1].toLocaleString() + (x[1] === 1 ? ' time' : ' times')); }).join('')
+          : '<p class="empty">No Strong’s words found for “' + esc(q) + '”. Try a word from the KJV, like love or mercy, or a number like G25.</p>';
+        wireNums(box);
+      });
+    }).catch(function () { box.innerHTML = '<p class="empty">Could not load Strong’s. Connect once so it can save for offline use.</p>'; });
+  }
+
   function bibleSearch(re, box, max, onDone) {
     box.innerHTML = '<p class="loading" id="prog">Searching…</p>';
     var ver = S.ver;
@@ -524,10 +718,11 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     t.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('ta').focus(); } };
     $('main').innerHTML = '<div class="wrap">' +
       (!isV && d.ref ? '<div class="quote" id="quote"><span class="lbl">' + esc(refStr(d.ref)) + ' · ' + S.ver.toUpperCase() + '</span><p id="qText">…</p><button id="qGo">Read in context ›</button></div>' : '') +
+      (isV && d.strong ? '<div class="rows" id="vsBox"><button class="srow" data-sn="' + d.strong + '"><span class="en">Strong’s ' + d.strong + '</span><span class="num">Open ›</span><span class="gl">The original word this page follows in the KJV</span></button></div>' : '') +
       (isV ? '<div class="types" id="types"></div><label class="field"><span class="lbl">Also called (comma between names)</span><input id="aliases" class="fld" value="' + esc(d.aliases.join(', ')) + '" placeholder="Other names, spellings"></label><span class="lbl">Your notes</span>' : '') +
       '<div class="ed"><div class="bd" id="bd" aria-hidden="true"></div><textarea id="ta" spellcheck="true" autocapitalize="sentences" placeholder="' +
       (isV ? 'What you know about this. Come back anytime to add more.' : 'Tap here, then the mic on your keyboard to talk. Verse references like John 3:16 link automatically.') + '">' + esc(d.text || '') + '</textarea></div>' +
-      (isV ? '<span class="lbl">Mentioned in your notes</span><div class="rows" id="mentions"></div><button class="findbtn" id="findBible">⌕ Find “' + esc(d.title) + '” in the Bible</button><div class="rows" id="bibleHits"></div>' :
+      (isV ? '<span class="lbl">Mentioned in your notes</span><div class="rows" id="mentions"></div><button class="findbtn" id="findBible">' + (d.strong ? '⌕ Every verse with Strong’s ' + d.strong + ' (KJV)' : '⌕ Find “' + esc(d.title) + '” in the Bible') + '</button><div class="rows" id="bibleHits"></div>' :
         '<p class="hint">Put the cursor on a word (or select a few words), then tap 🔗 Link word or press Tab. 📖 adds the verse you were reading.</p>') + '</div>';
     if (!isV && d.ref) {
       loadBook(S.ver, d.ref.b).then(function (bk) { var ch = bk.c[d.ref.c - 1] || [], a = d.ref.v || 1, z = d.ref.v2 || a; $('qText') && ($('qText').textContent = ch.slice(a - 1, z).join(' ')); }).catch(function () {});
@@ -541,7 +736,12 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       });
       $('aliases').onchange = function () { d.aliases = this.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean); d.updated = Date.now(); buildMap(); paint(); save(); };
       renderMentions();
+      if (d.strong) {
+        wireNums($('vsBox'));
+        glossAll().then(function (g) { var x = g[d.strong], el = document.querySelector('#vsBox .gl'); if (x && el) el.innerHTML = '<i dir="auto">' + esc(x[0]) + '</i> ' + esc(x[1]) + ' · ' + esc(x[2]); });
+      }
       $('findBible').onclick = function () {
+        if (d.strong) { $('bibleHits').innerHTML = '<p class="loading">Finding every verse…</p>'; return Promise.all([strongEntry(d.strong), vrefs()]).then(function (r) { if (r[0]) listOcc(r[0], $('bibleHits')); }); }
         var terms = [d.title].concat(d.aliases).filter(function (x) { return x && x.trim().length > 1; }).sort(function (a, b) { return b.length - a.length; });
         var re = new RegExp('(?<![\\p{L}\\p{N}])(' + terms.map(escRe).join('|') + ')(?![\\p{L}\\p{N}])', 'giu');
         bibleSearch(re, $('bibleHits'), 150);
