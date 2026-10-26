@@ -1,6 +1,8 @@
 package app.scripturevault;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -27,6 +29,13 @@ public class MainActivity extends Activity {
     web.clearCache(true);
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) { return loader.shouldInterceptRequest(r.getUrl()); }
+      // Links to other websites (like the store) open in the phone's browser.
+      @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+        Uri u = r.getUrl();
+        if ("appassets.androidplatform.net".equals(u.getHost())) return false;
+        try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception e) { }
+        return true;
+      }
     });
     setContentView(web);
     web.loadUrl("https://appassets.androidplatform.net/assets/index.html");

@@ -161,6 +161,10 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
 .xlit { font-family: var(--serif); font-size: 22px; font-style: italic; }
 .sdef { font-family: var(--serif); font-size: 18px; line-height: 1.6; margin: 0; overflow-wrap: anywhere; }
 .sref { border: 0; background: color-mix(in srgb, var(--theme) 22%, transparent); color: var(--ink); border-radius: 5px; padding: 0 5px; font: inherit; font-weight: 700; }
+.ulist { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 17px; line-height: 1.4; }
+a.sbtn { display: block; text-decoration: none; color: inherit; text-align: center; }
+.lockbox { border: 2px dashed var(--accent); border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; }
+.lockbox p { margin: 0; font-size: 17px; }
 .themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .themes button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 12px 4px; font-weight: 700; }
 .themes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
@@ -412,6 +416,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       '<button class="sbtn primary" id="vLink" hidden></button><button class="sbtn" id="vCopy">Copy verse</button>';
     sheet(h);
     $('vNote').onclick = function () {
+      if (!canAddNote()) return;
       var n = { id: uid(), title: refStr(r), ref: r, text: '', updated: Date.now() }; S.notes.unshift(n); save();
       go({ view: 'doc', kind: 'note', id: n.id }); setTimeout(function () { $('ta') && $('ta').focus(); }, 50);
     };
@@ -445,6 +450,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   }
   function linkTerm(w) {
     var id = lookup[w.toLowerCase()];
+    if (!id && !canAddVault()) return;
     if (!id) { var v = { id: uid(), type: 'idea', title: w, aliases: [], text: '', updated: Date.now() }; S.vault.push(v); id = v.id; buildMap(); save(); toast('Added “' + w + '” to the vault'); }
     go({ view: 'doc', kind: 'vault', id: id });
   }
@@ -464,7 +470,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     $('main').innerHTML = '<div class="wrap"><input id="q" class="search" type="search" placeholder="Search your notes" value="' + esc(query) + '" aria-label="Search notes">' +
       '<button class="newbtn" id="newNote">+ New note</button><div class="rows" id="rows"></div></div>';
     $('q').oninput = function () { query = this.value; fill(); };
-    $('newNote').onclick = function () { var n = { id: uid(), title: '', text: '', updated: Date.now() }; S.notes.unshift(n); save(); go({ view: 'doc', kind: 'note', id: n.id }); setTimeout(function () { $('ta') && $('ta').focus(); }, 50); };
+    $('newNote').onclick = function () { if (!canAddNote()) return; var n = { id: uid(), title: '', text: '', updated: Date.now() }; S.notes.unshift(n); save(); go({ view: 'doc', kind: 'note', id: n.id }); setTimeout(function () { $('ta') && $('ta').focus(); }, 50); };
     function fill() {
       var q = query.trim().toLowerCase(), box = $('rows'); box.innerHTML = '';
       var list = S.notes.filter(function (n) { return !q || (noteTitle(n) + ' ' + n.text).toLowerCase().indexOf(q) >= 0; }).sort(function (a, b) { return b.updated - a.updated; });
@@ -541,6 +547,62 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     if ((sMode === 'bible' || sMode === 'notes') && sQuery) run();
   }
 
+  // ── Unlock: $4.99, pay once, keep forever ──
+  // Fill these in once the Lemon Squeezy store exists (see the store setup checklist).
+  var STORE = { buyUrl: '', storeId: 0, productId: 0 };
+  var LIMIT = { notes: 25, vault: 10 };
+  var LS = 'https://api.lemonsqueezy.com/v1/licenses/';
+  function unlocked() { return !!(S.unlock && S.unlock.key); }
+  function mine(list) { return list.filter(function (d) { return !d.ex; }).length; }
+  function canAddNote() {
+    if (unlocked() || mine(S.notes) < LIMIT.notes) return true;
+    upsell('You have used all ' + LIMIT.notes + ' free notes. Every note you wrote is safe, and you can still read and change them.'); return false;
+  }
+  function canAddVault() {
+    if (unlocked() || mine(S.vault) < LIMIT.vault) return true;
+    upsell('You have used all ' + LIMIT.vault + ' free vault pages. They are all safe, and they keep linking in your notes.'); return false;
+  }
+  function needUnlock(why) { if (unlocked()) return true; upsell(why); return false; }
+  function upsell(why) {
+    sheet('<h2>Unlock Scripture Vault</h2>' + (why ? '<p class="vtext" style="font-size:17px">' + esc(why) + '</p>' : '') +
+      '<div class="card2"><b style="font-size:20px">$4.99 · pay once, yours to keep</b><ul class="ulist">' +
+      '<li>Unlimited notes and vault pages</li><li>Strong’s Concordance: the Hebrew and Greek behind every KJV word</li>' +
+      '<li>Find every verse a vault name or Strong’s word is in</li><li>See every note that mentions a vault page</li><li>Backup and restore your notes</li></ul></div>' +
+      (STORE.buyUrl ? '<a class="sbtn primary" href="' + esc(STORE.buyUrl) + '" target="_blank" rel="noopener">Buy the Unlock · $4.99</a>' : '<p class="hint">The store opens soon.</p>') +
+      '<span class="lbl">Already bought it? Enter the unlock key from your receipt email</span>' +
+      '<input id="uKey" class="fld" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Paste your unlock key"><button class="sbtn primary" id="uGo">Unlock this phone</button>' +
+      '<p class="hint" id="uMsg" aria-live="polite"></p><button class="sbtn" id="uClose">Not now</button>');
+    $('uClose').onclick = closeSheet; $('uGo').onclick = activate;
+  }
+  function lsPost(action, body) {
+    return fetch(LS + action, { method: 'POST', headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: Object.keys(body).map(function (k) { return k + '=' + encodeURIComponent(body[k]); }).join('&') }).then(function (r) { return r.json(); });
+  }
+  function ours(d) { return d && d.meta && (!STORE.storeId || d.meta.store_id === STORE.storeId) && (!STORE.productId || d.meta.product_id === STORE.productId); }
+  function activate() {
+    var key = $('uKey').value.trim(), msg = $('uMsg'), btn = $('uGo');
+    if (key.length < 8) { msg.textContent = 'Paste the unlock key from your receipt email.'; return; }
+    msg.textContent = 'Checking your key…'; btn.disabled = true;
+    lsPost('activate', { license_key: key, instance_name: 'Scripture Vault on a phone' }).then(function (d) {
+      if (d && d.activated && ours(d)) {
+        S.unlock = { key: key, instance: d.instance && d.instance.id, at: Date.now() }; save(); closeSheet(); toast('Unlocked. Thank you!'); show(state()); return;
+      }
+      btn.disabled = false;
+      var e = (d && d.error) || '';
+      msg.textContent = /limit/i.test(e) ? 'This key is already used on the most phones it allows. Contact us and we will move it to this phone.'
+        : d && d.activated ? 'That key is for a different product.' : 'That key did not work. Check it against your receipt email.';
+    }).catch(function () { btn.disabled = false; msg.textContent = 'Could not reach the unlock service. Connect to the internet once to unlock. After that it works offline.'; });
+  }
+  // Every couple of weeks, when online, make sure the key was not refunded. A missing signal never locks the app.
+  function recheck() {
+    var u = S.unlock; if (!u || !u.key || Date.now() - (u.at || 0) < 14 * 864e5) return;
+    var body = { license_key: u.key }; if (u.instance) body.instance_id = u.instance;
+    lsPost('validate', body).then(function (d) {
+      if (d && d.valid) { u.at = Date.now(); save(); }
+      else if (d && d.license_key && /disabled|expired/.test(d.license_key.status || '')) { S.unlock = null; save(); toast('The unlock on this phone was turned off.'); }
+    }).catch(function () {});
+  }
+
   // ── Concordance: word lists and Strong's ──
   // Strong's is meant for the paid Unlock; it is open to everyone until the Unlock is built.
   var wLetter = 'A', wFilter = '', stQuery = '', VREF = null;
@@ -605,6 +667,15 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
       var e = res[0]; if (view !== 'strong' || cur.n !== n) return;
       if (!e) { m.innerHTML = '<div class="wrap"><p class="empty">There is no Strong’s number ' + esc(n) + '. Greek numbers go from G1 to G5624, and Hebrew from H1 to H8674.</p></div>'; return; }
       var ve = S.vault.filter(function (v) { return v.strong === n; })[0], def = [e.r, e.d].filter(Boolean).join(' ');
+      if (!unlocked()) {
+        var nv = e.o ? e.o.split(',').reduce(function (a, o) { a[o.split('.')[0]] = 1; return a; }, {}) : {};
+        m.innerHTML = '<div class="wrap"><div class="card2"><span class="lbl">' + (n[0] === 'G' ? 'Greek · New Testament' : 'Hebrew · Old Testament') + '</span>' +
+          '<p class="lemma" dir="auto">' + esc(e.l) + '</p><div class="xlit">' + esc(e.x) + '</div>' + (e.p ? '<div class="meta">Say it: ' + esc(e.p) + '</div>' : '') + '</div>' +
+          '<div class="lockbox"><p>Strong’s full definition, how the KJV translates it, and all ' + Object.keys(nv).length.toLocaleString() + ' verses that use this word are part of the Unlock.</p>' +
+          '<button class="newbtn" id="sUnlock">Unlock · $4.99, yours to keep</button></div></div>';
+        $('sUnlock').onclick = function () { upsell(''); };
+        return;
+      }
       m.innerHTML = '<div class="wrap"><div class="card2"><span class="lbl">' + (n[0] === 'G' ? 'Greek · New Testament' : 'Hebrew · Old Testament') + '</span>' +
         '<p class="lemma" dir="auto">' + esc(e.l) + '</p><div class="xlit">' + esc(e.x) + '</div>' + (e.p ? '<div class="meta">Say it: ' + esc(e.p) + '</div>' : '') + '</div>' +
         (def ? '<span class="lbl">Strong’s definition</span><p class="sdef">' + linkNums(def) + '</p>' : '') +
@@ -741,6 +812,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
         glossAll().then(function (g) { var x = g[d.strong], el = document.querySelector('#vsBox .gl'); if (x && el) el.innerHTML = '<i dir="auto">' + esc(x[0]) + '</i> ' + esc(x[1]) + ' · ' + esc(x[2]); });
       }
       $('findBible').onclick = function () {
+        if (!needUnlock('Finding every verse a vault page appears in is part of the Unlock.')) return;
         if (d.strong) { $('bibleHits').innerHTML = '<p class="loading">Finding every verse…</p>'; return Promise.all([strongEntry(d.strong), vrefs()]).then(function (r) { if (r[0]) listOcc(r[0], $('bibleHits')); }); }
         var terms = [d.title].concat(d.aliases).filter(function (x) { return x && x.trim().length > 1; }).sort(function (a, b) { return b.length - a.length; });
         var re = new RegExp('(?<![\\p{L}\\p{N}])(' + terms.map(escRe).join('|') + ')(?![\\p{L}\\p{N}])', 'giu');
@@ -772,6 +844,13 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   }
   function renderMentions() {
     var box = $('mentions'); if (!box) return; box.innerHTML = ''; var found = 0;
+    if (!unlocked()) {
+      var cnt = 0;
+      S.notes.concat(S.vault.filter(function (v) { return v.id !== cur.id; })).forEach(function (d) { findLinks(d.text, d.type ? d.id : null).forEach(function (r) { if (r.id === cur.id) cnt++; }); });
+      box.innerHTML = '<div class="lockbox"><p>' + (cnt ? 'Mentioned ' + cnt + ' time' + (cnt === 1 ? '' : 's') + ' in your notes.' : 'Not in your notes yet.') + ' Seeing each mention and jumping to it is part of the Unlock.</p><button class="sbtn primary" id="mUnl">Unlock · $4.99</button></div>';
+      $('mUnl').onclick = function () { upsell(''); };
+      return;
+    }
     S.notes.map(function (n) { return { kind: 'note', d: n }; }).concat(S.vault.filter(function (v) { return v.id !== cur.id; }).map(function (v) { return { kind: 'vault', d: v }; }))
       .forEach(function (x) {
         findLinks(x.d.text, x.kind === 'vault' ? x.d.id : null).filter(function (r) { return r.id === cur.id; }).forEach(function (r) {
@@ -843,11 +922,13 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   }
   function openMenu() {
     var hasEx = S.notes.concat(S.vault).some(function (d) { return d.ex; });
-    sheet('<h2>Scripture Vault</h2><p>Your notes are saved on this phone. Copy a backup now and then and keep it somewhere safe.</p>' +
+    sheet('<h2>Scripture Vault</h2><p>Your notes are saved on this phone.</p>' +
       '<span class="lbl">Background</span><div class="themes">' + [['light', '☀ Light'], ['dark', '☾ Dark'], ['auto', 'Phone setting']].map(function (o) {
         return '<button data-theme-set="' + o[0] + '" class="' + ((S.theme || 'auto') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
       '<span class="lbl">Text size</span><div class="chapnav"><button id="mSm">A− Smaller</button><button id="mLg">A+ Larger</button></div>' +
-      '<button class="sbtn primary" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
+      (unlocked() ? '<p class="vtext" style="font-size:17px">✓ Unlocked on this phone. Thank you!</p>'
+        : '<button class="sbtn primary" id="mUnlock">Unlock everything · $4.99</button><p>Free: ' + Math.min(mine(S.notes), LIMIT.notes) + ' of ' + LIMIT.notes + ' notes, ' + Math.min(mine(S.vault), LIMIT.vault) + ' of ' + LIMIT.vault + ' vault pages used.</p>') +
+      '<button class="sbtn' + (unlocked() ? ' primary' : '') + '" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
       (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
       '<p style="font-size:14px">Version ' + APP_VERSION + ' · Bible text: KJV, WEB, BSB, ASV, YLT, Darby, Geneva 1599, Douay-Rheims and BBE, all public domain.</p><button class="sbtn" id="mClose">Close</button>');
     $('mClose').onclick = closeSheet;
@@ -856,8 +937,10 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
     });
     $('mSm').onclick = function () { S.size = Math.max(14, (S.size || 19) - 1); applySize(); save(); };
     $('mLg').onclick = function () { S.size = Math.min(30, (S.size || 19) + 1); applySize(); save(); };
-    $('mCopy').onclick = function () { copy(JSON.stringify({ app: 'scripture-vault', notes: S.notes, vault: S.vault }), 'Backup copied. Paste it into an email to yourself.'); };
+    if ($('mUnlock')) $('mUnlock').onclick = function () { upsell(''); };
+    $('mCopy').onclick = function () { if (!needUnlock('Backup and restore are part of the Unlock.')) return; copy(JSON.stringify({ app: 'scripture-vault', notes: S.notes, vault: S.vault }), 'Backup copied. Paste it into an email to yourself.'); };
     $('mRestore').onclick = function () {
+      if (!needUnlock('Backup and restore are part of the Unlock.')) return;
       sheet('<h2>Restore</h2><p>Paste a backup below. This replaces the notes on this phone now.</p><textarea id="rTxt" aria-label="Backup text"></textarea><button class="sbtn primary" id="rGo">Replace with this backup</button><button class="sbtn" id="rNo">Cancel</button>');
       $('rNo').onclick = closeSheet;
       $('rGo').onclick = function () {
@@ -900,7 +983,7 @@ mark.hit { background: color-mix(in srgb, var(--accent) 70%, transparent); }
   }
 
   S = load(); S.pos = S.pos || { b: 43, c: 3, v: 16 }; S.ver = S.ver || 'kjv'; applySize(); applyTheme();
-  buildRefs(); buildMap(); renderRead(S.pos.v);
+  buildRefs(); buildMap(); renderRead(S.pos.v); setTimeout(recheck, 4000);
   if ('serviceWorker' in navigator && location.protocol === 'https:' && location.hostname !== 'appassets.androidplatform.net') {
     navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () { swOn = true; setTimeout(prefetch, 2500); }).catch(function () {});
   }
