@@ -559,7 +559,9 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
   var STORE = { buyUrl: '', storeId: 0, productId: 0 };
   var LIMIT = { notes: 25, vault: 10 };
   var LS = 'https://api.lemonsqueezy.com/v1/licenses/';
-  function unlocked() { return !!(S.unlock && S.unlock.key); }
+  // FREE edition: everything open, no prices shown. Set FREE = false to bring back the $4.99 Unlock.
+  var FREE = true;
+  function unlocked() { return FREE || !!(S.unlock && S.unlock.key); }
   function mine(list) { return list.filter(function (d) { return !d.ex; }).length; }
   function canAddNote() {
     if (unlocked() || mine(S.notes) < LIMIT.notes) return true;
@@ -937,7 +939,7 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
       '<span class="lbl">Background</span><div class="themes">' + [['light', '☀ Light'], ['dark', '☾ Dark'], ['auto', 'Phone setting']].map(function (o) {
         return '<button data-theme-set="' + o[0] + '" class="' + ((S.theme || 'auto') === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
       '<span class="lbl">Text size</span><div class="chapnav"><button id="mSm">A− Smaller</button><button id="mLg">A+ Larger</button></div>' +
-      (unlocked() ? '<p class="vtext" style="font-size:17px">✓ Unlocked on this phone. Thank you!</p>'
+      (FREE ? '' : unlocked() ? '<p class="vtext" style="font-size:17px">✓ Unlocked on this phone. Thank you!</p>'
         : '<button class="sbtn primary" id="mUnlock">Unlock everything · $4.99</button><p>Free: ' + Math.min(mine(S.notes), LIMIT.notes) + ' of ' + LIMIT.notes + ' notes, ' + Math.min(mine(S.vault), LIMIT.vault) + ' of ' + LIMIT.vault + ' vault pages used.</p>') +
       '<button class="sbtn' + (unlocked() ? ' primary' : '') + '" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
       (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
