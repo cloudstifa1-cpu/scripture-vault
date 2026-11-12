@@ -202,7 +202,7 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
 
 <script>
 (function () {
-  var KEY = 'scripturevault.v1', APP_VERSION = '1.2';
+  var KEY = 'scripturevault.v1', APP_VERSION = '1.3';
   var BOOKS = [["Genesis",50],["Exodus",40],["Leviticus",27],["Numbers",36],["Deuteronomy",34],["Joshua",24],["Judges",21],["Ruth",4],["1 Samuel",31],["2 Samuel",24],["1 Kings",22],["2 Kings",25],["1 Chronicles",29],["2 Chronicles",36],["Ezra",10],["Nehemiah",13],["Esther",10],["Job",42],["Psalms",150],["Proverbs",31],["Ecclesiastes",12],["Song of Solomon",8],["Isaiah",66],["Jeremiah",52],["Lamentations",5],["Ezekiel",48],["Daniel",12],["Hosea",14],["Joel",3],["Amos",9],["Obadiah",1],["Jonah",4],["Micah",7],["Nahum",3],["Habakkuk",3],["Zephaniah",3],["Haggai",2],["Zechariah",14],["Malachi",4],["Matthew",28],["Mark",16],["Luke",24],["John",21],["Acts",28],["Romans",16],["1 Corinthians",16],["2 Corinthians",13],["Galatians",6],["Ephesians",6],["Philippians",4],["Colossians",4],["1 Thessalonians",5],["2 Thessalonians",3],["1 Timothy",6],["2 Timothy",4],["Titus",3],["Philemon",1],["Hebrews",13],["James",5],["1 Peter",5],["2 Peter",3],["1 John",5],["2 John",1],["3 John",1],["Jude",1],["Revelation",22]];
   // Short names people write in notes (book number → extra names)
   var ABBR = {1:'Gen|Gn',2:'Exod|Exo',3:'Lev|Lv',4:'Num|Nm',5:'Deut|Dt',6:'Josh|Jos',7:'Judg|Jdg',8:'Rth',9:'1 Sam|1 Sa',10:'2 Sam|2 Sa',
@@ -413,7 +413,9 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
       words.map(function (w, i) { return '<button data-i="' + i + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
       '<button class="sbtn primary" id="vLink" hidden></button>' +
       (S.ver === 'kjv' ? '<button class="sbtn" id="vShowStrong">📜 Show the original Hebrew and Greek words</button>' : '<button class="sbtn" id="vToKjv">📜 See the original Hebrew and Greek words (opens this verse in the KJV)</button>') +
-      '<div class="rows" id="vStrong" hidden></div><button class="sbtn" id="vCopy">Copy verse</button>';
+      '<div class="rows" id="vStrong" hidden></div>' +
+      '<button class="sbtn" id="vXr">🔗 Show related verses</button><div id="vXrBox" hidden></div>' +
+      '<button class="sbtn" id="vCopy">Copy verse</button>';
     sheet(h);
     $('vNote').onclick = function () {
       if (!canAddNote()) return;
@@ -434,6 +436,12 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
       };
     });
     $('vCopy').onclick = function () { copy(text + ' (' + refStr(r) + ', ' + S.ver.toUpperCase() + ')'); };
+    $('vXr').onclick = function () {
+      var box = $('vXrBox'), btn = $('vXr');
+      if (!box.hidden) { box.hidden = true; btn.textContent = '🔗 Show related verses'; return; }
+      box.hidden = false; btn.textContent = '🔗 Hide related verses';
+      if (!box.firstChild) xrefList(b, c, v, box);
+    };
     if (S.ver === 'kjv') $('vShowStrong').onclick = function () {
       var box = $('vStrong'), btn = $('vShowStrong');
       if (!box.hidden) { box.hidden = true; btn.textContent = '📜 Show the original Hebrew and Greek words'; return; }
@@ -667,6 +675,37 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
     }
     more.onclick = page; page();
     return { times: occ.length, verses: order.length };
+  }
+  // Related verses (cross-references from OpenBible.info), best first, 15 at a time, in the version being read
+  function xrefList(b, c, v, box) {
+    var ver = S.ver;
+    box.innerHTML = '<p class="loading">Finding related verses…</p>';
+    getJSON('data/xr/' + b + '.json').then(function (d) {
+      if (!box.isConnected) return;
+      var refs = (d[c + ':' + v] || '').split(' ').filter(Boolean).map(function (s) {
+        var p = s.split('.'), vv = p[2].split('-'); return { b: +p[0], c: +p[1], v: +vv[0], v2: vv[1] ? +vv[1] : 0 };
+      });
+      box.innerHTML = '';
+      if (!refs.length) { box.innerHTML = '<p class="hint">No related verses listed for this verse.</p>'; return; }
+      var list = document.createElement('div'); list.className = 'rows'; box.appendChild(list);
+      var more = document.createElement('button'); more.className = 'findbtn'; more.hidden = true; box.appendChild(more);
+      var shown = 0;
+      function page() {
+        var part = refs.slice(shown, shown + 15), books = {}; shown += part.length; more.hidden = true;
+        part.forEach(function (r) { books[r.b] = 1; });
+        Promise.all(Object.keys(books).map(function (x) { return loadBook(ver, +x); })).then(function () {
+          part.forEach(function (r) {
+            var ch = cache[ver + r.b].c[r.c - 1] || [], t = ch.slice(r.v - 1, r.v2 || r.v).join(' ');
+            var row = document.createElement('button'); row.className = 'row';
+            row.innerHTML = '<span class="meta"><span class="ref">' + esc(refStr(r)) + '</span><span>' + ver.toUpperCase() + '</span></span><span class="scr">' + esc(t) + '</span>';
+            row.onclick = function () { go({ view: 'read', b: r.b, c: r.c, v: r.v }); }; list.appendChild(row);
+          });
+          more.textContent = 'Show more related verses (' + (refs.length - shown) + ' left)';
+          more.hidden = shown >= refs.length;
+        }).catch(function () { more.textContent = 'Try again'; more.hidden = false; shown -= part.length; });
+      }
+      more.onclick = page; page();
+    }).catch(function () { box.innerHTML = '<p class="hint">Could not load related verses. Connect once so they can save for offline use.</p>'; });
   }
   function addStrongVault(n, e, ve) {
     if (ve) return go({ view: 'doc', kind: 'vault', id: ve.id });
@@ -943,7 +982,10 @@ a.sbtn { display: block; text-decoration: none; color: inherit; text-align: cent
         : '<button class="sbtn primary" id="mUnlock">Unlock everything · $4.99</button><p>Free: ' + Math.min(mine(S.notes), LIMIT.notes) + ' of ' + LIMIT.notes + ' notes, ' + Math.min(mine(S.vault), LIMIT.vault) + ' of ' + LIMIT.vault + ' vault pages used.</p>') +
       '<button class="sbtn' + (unlocked() ? ' primary' : '') + '" id="mCopy">Copy backup</button><button class="sbtn" id="mRestore">Restore from a backup</button>' +
       (hasEx ? '<button class="sbtn danger" id="mEx">Remove the example notes</button>' : '') +
-      '<p style="font-size:14px">Version ' + APP_VERSION + ' · Bible text: KJV, WEB, BSB, ASV, YLT, Darby, Geneva 1599, Douay-Rheims and BBE, all public domain.</p><button class="sbtn" id="mClose">Close</button>');
+      '<span class="lbl">Sources</span><p style="font-size:14px">Version ' + APP_VERSION + ' · Bible text: KJV, WEB, BSB, ASV, YLT, Darby, Geneva 1599, Douay-Rheims and BBE, all public domain. ' +
+      'KJV with Strong’s numbers: eBible.org. Strong’s Hebrew and Greek dictionaries (1890): Open Scriptures (openscriptures.org). ' +
+      'Most versions: scrollmapper/bible_databases. World English Bible: TehShrike/world-english-bible. ' +
+      'Related verses: OpenBible.info, licensed CC BY.</p><button class="sbtn" id="mClose">Close</button>');
     $('mClose').onclick = closeSheet;
     [].forEach.call(document.querySelectorAll('[data-theme-set]'), function (b) {
       b.onclick = function () { S.theme = b.getAttribute('data-theme-set'); applyTheme(); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} [].forEach.call(document.querySelectorAll('[data-theme-set]'), function (x) { x.classList.toggle('on', x === b); }); };
